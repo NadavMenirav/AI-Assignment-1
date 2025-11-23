@@ -12,17 +12,14 @@ id = ["No numbers - I'm special!"]
 
 class State:
     size = 0 # Size of the board. no reason to save it in every copy.
+    walls = 0 # The walls. no reason to save it in every copy.
 
     def __init__(self, id, size, walls, taps, plants):
         self.id = id
-        self.size = size
-        self.walls = walls
+        State.size = size
+        State.walls = walls
         self.taps = taps
         self.plants = plants
-
-
-
-
 
 class WateringProblem(search.Problem):
     """This class implements a pressure plate problem"""
