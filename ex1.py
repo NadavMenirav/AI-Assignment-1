@@ -14,12 +14,12 @@ class State:
     size = 0 # Size of the board. no reason to save it in every copy.
     walls = 0 # The walls. no reason to save it in every copy.
 
-    def __init__(self, id, size, walls, taps, plants):
-        self.id = id
-        State.size = size
-        State.walls = walls
-        self.taps = taps
-        self.plants = plants
+    def __init__(self, initial):
+        State.size = initial.size
+        State.walls = initial.walls
+        self.taps = initial.taps
+        self.plants = initial.plants
+
 
 class WateringProblem(search.Problem):
     """This class implements a pressure plate problem"""
@@ -28,6 +28,8 @@ class WateringProblem(search.Problem):
         """ Constructor only needs the initial state.
         Don't forget to set the goal or implement the goal test"""
         search.Problem.__init__(self, initial)
+        self.state = State(initial)
+
 
     def successor(self, state):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
