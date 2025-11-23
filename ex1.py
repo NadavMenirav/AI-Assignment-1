@@ -11,6 +11,8 @@ ROBOTS = "Robots"
 id = ["No numbers - I'm special!"]
 
 class State:
+    size = 0 # Size of the board. no reason to save it in every copy.
+
     def __init__(self, id, size, walls, taps, plants):
         self.id = id
         self.size = size
