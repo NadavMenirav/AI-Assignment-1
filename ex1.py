@@ -10,6 +10,17 @@ ROBOTS = "Robots"
 
 id = ["No numbers - I'm special!"]
 
+class State:
+    def __init__(self, id, size, walls, taps, plants):
+        self.id = id
+        self.size = size
+        self.walls = walls
+        self.taps = taps
+        self.plants = plants
+
+
+
+
 
 class WateringProblem(search.Problem):
     """This class implements a pressure plate problem"""
