@@ -12,25 +12,28 @@ id = ["No numbers - I'm special!"]
 
 class State:
     size = (0, 0) # Size of the board. no reason to save it in every copy.
-    walls = frozenset() # The walls. no reason to save it in every copy.
+    walls = dict[tuple, bool] # The walls. no reason to save it in every copy.
     taps: dict[tuple, int]
     plants: dict[tuple, int]
     robots: dict[int, tuple]
 
 
-    def __init__(self, initial):
-        State.size = initial.size
-        State.walls = initial.walls
-        self.taps = initial.taps
-        self.plants = initial.plants
-        self.robots = initial.robots
+    def __init__(self, initial = None, size = None, walls = None, taps = None, plants = None, robots = None):
+        # If we construct using initial
+        if initial is not None:
+            State.size = initial.size
+            State.walls = dict(((i, j), True) for (i, j) in initial[WALLS])
+            self.taps = initial[TAPS]
+            self.plants = initial[PLANTS]
+            self.robots = initial[ROBOTS]
 
-    def __init__(self, size, walls, taps, plants, robots):
-        State.size = size
-        State.walls = walls
-        self.taps = taps
-        self.plants = plants
-        self.robots = robots
+        # If we construct using size, walls, taps, plants, robots
+        else:
+            State.size = size
+            State.walls = walls
+            self.taps = taps
+            self.plants = plants
+            self.robots = robots
 
 
 class WateringProblem(search.Problem):
@@ -52,10 +55,10 @@ class WateringProblem(search.Problem):
             y = robot[1]
 
             # If the robot can move left
-            if x - 1 >= 0 and (x - 1, y) not in State.walls:
+            if x - 1 >= 0 and State.walls.get((x - 1, y), None) is None:
 
                 # Changing the robot's position
-                new_robot_tuple = (x + 1, y, robot[2], robot[3])
+                new_robot_tuple = (x + 1,  y, robot[2], robot[3])
 
                 # Creating the new state
                 new_state = State(state.size, state.walls, state.taps, state.plants, new_robot_tuple)
@@ -100,6 +103,10 @@ class WateringProblem(search.Problem):
 
                 # Adding the new state to the result of all possible states we can go to
                 possible_successors.append(new_state)
+
+
+            # We now want to check whether the robot is on a plant it can water
+            water_needed_in_plant_under_robot = state.plants.get((x, y), 0)
 
 
 
