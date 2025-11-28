@@ -143,39 +143,32 @@ class WateringProblem(search.Problem):
                 # We don't care whether there is a plant that needs 0 WU or if there isn't a plant at all
                 water_needed_in_plant_under_robot = state.plants.get((x, y), 0)
 
-                if water_needed_in_plant_under_robot == 0:
-                    break
+                if water_needed_in_plant_under_robot > 0:
+                    # Changing the robot's load
+                    new_robot_key_tuple = (x, y)
+                    new_robot_value_tuple = (id, load - 1, capacity)
 
-                # For testing:
-                if water_needed_in_plant_under_robot < 0:
-                    print("ERROR WATER NEEDED IN PLANT IS NEGATIVE")
-                    break
+                    # Changing the plant
+                    new_plant_key_tuple = (x, y)
+                    new_plant_value = water_needed_in_plant_under_robot - 1
 
-                # Changing the robot's load
-                new_robot_key_tuple = (x, y)
-                new_robot_value_tuple = (id, load - 1, capacity)
+                    # Creating the new state
+                    new_state = State(size = state.size,
+                                      walls = state.walls,
+                                      taps = state.taps,
+                                      plants = state.plants,
+                                      robots = state.robots)
 
-                # Changing the plant
-                new_plant_key_tuple = (x, y)
-                new_plant_value = water_needed_in_plant_under_robot - 1
+                    # Deleting the previous state of robot and inserting the new one
+                    del new_state.robots[(x, y)]
+                    new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
-                # Creating the new state
-                new_state = State(size = state.size,
-                                  walls = state.walls,
-                                  taps = state.taps,
-                                  plants = state.plants,
-                                  robots = state.robots)
+                    # Deleting the previous state of plant and inserting the new one
+                    del new_state.plants[(x, y)]
+                    new_state.plants[new_plant_key_tuple] = new_plant_value
 
-                # Deleting the previous state of robot and inserting the new one
-                del new_state.robots[(x, y)]
-                new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
-
-                # Deleting the previous state of plant and inserting the new one
-                del new_state.plants[(x, y)]
-                new_state.plants[new_plant_key_tuple] = new_plant_value
-
-                # Inserting the new state to the possible next states
-                possible_successors.append((f"POUR{{{id}}}", new_state))
+                    # Inserting the new state to the possible next states
+                    possible_successors.append((f"POUR{{{id}}}", new_state))
 
 
             # We now want to check whether the robot can load more WU from a tap
@@ -183,42 +176,33 @@ class WateringProblem(search.Problem):
 
                 # We now want to check whether the robot is on a tap it can load water from
                 # We don't care whether there is a tap that can give 0 WU or if there isn't a tap at all
-                water_available_in_tap_under_robot = state.robots.get((x, y), 0)
+                water_available_in_tap_under_robot = state.taps.get((x, y), 0)
+                if water_available_in_tap_under_robot > 0:
+                    # Changing the robot's load
+                    new_robot_key_tuple = (x, y)
+                    new_robot_value_tuple = (id, load + 1, capacity)
 
-                if water_available_in_tap_under_robot == 0:
-                    break
+                    # Changing the tap
+                    new_tap_key_tuple = (x, y)
+                    new_tap_value = water_available_in_tap_under_robot - 1
 
-                # For testing:
-                if water_available_in_tap_under_robot < 0:
-                    print("ERROR WATER AVAILABLE IN TAP IS NEGATIVE")
-                    break
+                    # Creating the new state
+                    new_state = State(size = state.size,
+                                      walls = state.walls,
+                                      taps = state.taps,
+                                      plants = state.plants,
+                                      robots = state.robots)
 
-                # Changing the robot's load
-                new_robot_key_tuple = (x, y)
-                new_robot_value_tuple = (id, load + 1, capacity)
+                    # Deleting the previous state of robot and inserting the new one
+                    del new_state.robots[(x, y)]
+                    new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
-                # Changing the tap
-                new_tap_key_tuple = (x, y)
-                new_tap_value = water_available_in_tap_under_robot - 1
+                    # Deleting the previous state of tap and inserting the new one
+                    del new_state.taps[(x, y)]
+                    new_state.taps[new_tap_key_tuple] = new_tap_value
 
-                # Creating the new state
-                new_state = State(size = state.size,
-                                  walls = state.walls,
-                                  taps = state.taps,
-                                  plants = state.plants,
-                                  robots = state.robots)
-
-                # Deleting the previous state of robot and inserting the new one
-                del new_state.robots[(x, y)]
-                new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
-
-                # Deleting the previous state of tap and inserting the new one
-                del new_state.taps[(x, y)]
-                new_state.plants[new_tap_key_tuple] = new_tap_value
-
-                # Inserting the new state to the possible next states
-                possible_successors.append((f"LOAD{{{id}}}", new_state))
-
+                    # Inserting the new state to the possible next states
+                    possible_successors.append((f"LOAD{{{id}}}", new_state))
         return possible_successors
 
 
