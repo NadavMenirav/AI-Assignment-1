@@ -69,7 +69,6 @@ class Node:
                path_cost=path_cost, depth=0)
         if parent:
             self.depth = parent.depth + 1
-
     def __repr__(self):
         return "<Node %s>" % (self.state,)
 

@@ -46,7 +46,7 @@ class WateringProblem(search.Problem):
         """ Constructor only needs the initial state.
         Don't forget to set the goal or implement the goal test"""
         search.Problem.__init__(self, initial)
-        self.state = State(initial)
+        self.initial = State(initial = initial)
 
 
     def successor(self, state: State):
@@ -67,7 +67,7 @@ class WateringProblem(search.Problem):
                                   taps = state.taps,
                                   plants = state.plants,
                                   robots = state.robots)
-                del new_state.robots[(x - 1, y)]
+                del new_state.robots[(x, y)]
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
@@ -87,7 +87,7 @@ class WateringProblem(search.Problem):
                                   taps = state.taps,
                                   plants = state.plants,
                                   robots = state.robots)
-                del new_state.robots[(x + 1, y)]
+                del new_state.robots[(x, y)]
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
@@ -107,7 +107,7 @@ class WateringProblem(search.Problem):
                                   taps = state.taps,
                                   plants = state.plants,
                                   robots = state.robots)
-                del new_state.robots[(x, y - 1)]
+                del new_state.robots[(x, y)]
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
@@ -128,7 +128,7 @@ class WateringProblem(search.Problem):
                                   robots = state.robots)
 
                 # Deleting the robot from its previous position and adding the new position
-                del new_state.robots[(x, y + 1)]
+                del new_state.robots[(x, y)]
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
@@ -219,7 +219,6 @@ class WateringProblem(search.Problem):
                 # Inserting the new state to the possible next states
                 possible_successors.append((f"LOAD{{{id}}}", new_state))
 
-
         return possible_successors
 
 
@@ -239,7 +238,7 @@ class WateringProblem(search.Problem):
 
         # This is an admissible heuristic, we need at least the remaining WU for the plants,
         # plus the remaining WU the robots need to load
-        return 2 * sum(node.state.plants.values()) - sum(node.state.robots.values()[1])
+        return 2 * sum(node.state.plants.values()) - sum(load for (id, load, capacity) in node.state.robots.values())
 
     def h_gbfs(self, node):
         """ This is the heuristic. It gets a node (not a state)
@@ -247,7 +246,7 @@ class WateringProblem(search.Problem):
 
         # This is an admissible heuristic, we need at least the remaining WU for the plants,
         # plus the remaining WU the robots need to load
-        return 2 * sum(node.state.plants.values()) - sum(node.state.robots.values()[1])
+        return 2 * sum(node.state.plants.values()) - sum(load for (id, load, capacity) in node.state.robots.values())
 
 
 def create_watering_problem(game):
