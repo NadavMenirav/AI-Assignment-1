@@ -53,12 +53,14 @@ class WateringProblem(search.Problem):
         for key, robot in state.robots.items():
             x = robot[0]
             y = robot[1]
+            load = robot[2]
+            capacity = robot[3]
 
             # If the robot can move left
             if x - 1 >= 0 and State.walls.get((x - 1, y)) is None:
 
                 # Changing the robot's position
-                new_robot_tuple = (x + 1,  y, robot[2], robot[3])
+                new_robot_tuple = (x + 1,  y, load, capacity)
 
                 # Creating the new state
                 new_state = State(state.size, state.walls, state.taps, state.plants, new_robot_tuple)
@@ -71,7 +73,7 @@ class WateringProblem(search.Problem):
             if x + 1 < State.size[0] and State.walls.get((x + 1, y)) is None:
 
                 # Changing the robot's position
-                new_robot_tuple = (x + 1, y, robot[2], robot[3])
+                new_robot_tuple = (x + 1, y, load, capacity)
 
                 # Creating the new state
                 new_state = State(state.size, state.walls, state.taps, state.plants, new_robot_tuple)
@@ -84,7 +86,7 @@ class WateringProblem(search.Problem):
             if y - 1 >= 0 and State.walls.get((x, y - 1)) is None:
 
                 # Changing the robot's position
-                new_robot_tuple = (x, y - 1, robot[2], robot[3])
+                new_robot_tuple = (x, y - 1, load, capacity)
 
                 # Creating the new state
                 new_state = State(state.size, state.walls, state.taps, state.plants, new_robot_tuple)
@@ -96,7 +98,7 @@ class WateringProblem(search.Problem):
             if y + 1 < State.size[1] and State.walls.get((x, y + 1)) is None:
 
                 # Changing the robot's position
-                new_robot_tuple = (x, y + 1, robot[2], robot[3])
+                new_robot_tuple = (x, y + 1, load, capacity)
 
                 # Creating the new state
                 new_state = State(state.size, state.walls, state.taps, state.plants, new_robot_tuple)
@@ -106,7 +108,11 @@ class WateringProblem(search.Problem):
 
 
             # We now want to check whether the robot is on a plant it can water
+            # We don't care whether there is a plant that needs 0 WU or if there isn't a plant at all
             water_needed_in_plant_under_robot = state.plants.get((x, y), 0)
+
+            # We want to check whether the robot has any WU on him
+
 
 
 
