@@ -52,11 +52,10 @@ class WateringProblem(search.Problem):
     def successor(self, state: State):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
         possible_successors = []
-        new_robots = state.robots
         for (x, y), (id, load, capacity) in state.robots.items():
 
             # If the robot can move left
-            if x - 1 >= 0 and State.walls.get((x - 1, y)) is None:
+            if x - 1 >= 0 and State.walls.get((x - 1, y)) is None and state.robots.get((x - 1, y)) is None:
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x - 1,  y)
@@ -76,7 +75,7 @@ class WateringProblem(search.Problem):
 
 
             # If the robot can move right
-            if x + 1 < State.size[0] and State.walls.get((x + 1, y)) is None:
+            if x + 1 < State.size[0] and State.walls.get((x + 1, y)) is None and state.robots.get((x + 1, y)) is None:
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x + 1,  y)
@@ -96,7 +95,7 @@ class WateringProblem(search.Problem):
 
 
             # If the robot can move down
-            if y - 1 >= 0 and State.walls.get((x, y - 1)) is None:
+            if y - 1 >= 0 and State.walls.get((x, y - 1)) is None and state.robots.get((x, y - 1)) is None:
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x,  y - 1)
@@ -115,7 +114,7 @@ class WateringProblem(search.Problem):
                 possible_successors.append((f"DOWN{{{id}}}", new_state))
 
             # If the robot can move up
-            if y + 1 < State.size[1] and State.walls.get((x, y + 1)) is None:
+            if y + 1 < State.size[1] and State.walls.get((x, y + 1)) is None and state.robots.get((x, y + 1)) is None:
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x,  y + 1)
