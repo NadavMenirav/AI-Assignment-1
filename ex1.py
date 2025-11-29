@@ -69,7 +69,7 @@ class WateringProblem(search.Problem):
         possible_successors = []
         for (x, y), (id, load, capacity) in state.robots.items():
 
-            # If the robot can move left
+            # If the robot can move UP
             if x - 1 >= 0 and State.walls.get((x - 1, y)) is None and state.robots.get((x - 1, y)) is None:
 
                 # Changing the robot's position
@@ -86,10 +86,10 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                possible_successors.append((f"LEFT{{{id}}}", new_state))
+                possible_successors.append((f"UP{{{id}}}", new_state))
 
 
-            # If the robot can move right
+            # If the robot can move DOWN
             if x + 1 < State.size[0] and State.walls.get((x + 1, y)) is None and state.robots.get((x + 1, y)) is None:
 
                 # Changing the robot's position
@@ -106,10 +106,10 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                possible_successors.append((f"RIGHT{{{id}}}", new_state))
+                possible_successors.append((f"DOWN{{{id}}}", new_state))
 
 
-            # If the robot can move down
+            # If the robot can move LEFT
             if y - 1 >= 0 and State.walls.get((x, y - 1)) is None and state.robots.get((x, y - 1)) is None:
 
                 # Changing the robot's position
@@ -126,9 +126,9 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                possible_successors.append((f"DOWN{{{id}}}", new_state))
+                possible_successors.append((f"LEFT{{{id}}}", new_state))
 
-            # If the robot can move up
+            # If the robot can move RIGHT
             if y + 1 < State.size[1] and State.walls.get((x, y + 1)) is None and state.robots.get((x, y + 1)) is None:
 
                 # Changing the robot's position
@@ -147,7 +147,7 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                possible_successors.append((f"UP{{{id}}}", new_state))
+                possible_successors.append((f"RIGHT{{{id}}}", new_state))
 
 
 
