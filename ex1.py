@@ -30,6 +30,7 @@ class State:
                 ((i, j), (id, load, capacity))
                 for id, (i, j, load, capacity) in initial[ROBOTS].items()
             )
+            self.hash = None
 
         # If we construct using size, walls, taps, plants, robots
         else:
@@ -38,6 +39,7 @@ class State:
             self.taps = dict(taps)
             self.plants = dict(plants)
             self.robots = dict(robots)
+            self.hash = None
 
     def __hash__(self):
         if self.hash is not None:
