@@ -16,6 +16,7 @@ class State:
     taps: dict[tuple, int]
     plants: dict[tuple, int]
     robots: dict[tuple, tuple]
+    hash = None
 
 
     def __init__(self, initial = None, size = None, walls = None, taps = None, plants = None, robots = None):
@@ -39,12 +40,16 @@ class State:
             self.robots = dict(robots)
 
     def __hash__(self):
-        return hash((
-            tuple(sorted(self.walls.items())),
+        if self.hash is not None:
+            return self.hash
+
+        self.hash = hash((
             tuple(sorted(self.taps.items())),
             tuple(sorted(self.plants.items())),
             tuple(sorted(self.robots.items())),
         ))
+
+        return self.hash
 
     def __eq__(self, other):
         return (
