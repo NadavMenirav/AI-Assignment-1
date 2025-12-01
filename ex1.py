@@ -152,7 +152,8 @@ class WateringProblem(search.Problem):
                     new_state.plants[new_plant_key_tuple] = new_plant_value
 
                     # Inserting the new state to the possible next states
-                    possible_successors.append((move, new_state))
+                    if self.cache.get(new_state) is None:
+                        possible_successors.append((move, new_state))
 
                     # If there is only one robot, there is no reason not to pour all he has onto the robot
                     if number_of_robots == 1: continue
@@ -191,7 +192,8 @@ class WateringProblem(search.Problem):
                     new_state.taps[new_tap_key_tuple] = new_tap_value
 
                     # Inserting the new state to the possible next states
-                    possible_successors.append((move, new_state))
+                    if self.cache.get(new_state) is None:
+                        possible_successors.append((move, new_state))
 
                     # If there is one robot he should fill his tank until full
                     # Or until he has enough WU to water all plants
@@ -217,7 +219,8 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                possible_successors.append((move, new_state))
+                if self.cache.get(new_state) is None:
+                    possible_successors.append((move, new_state))
 
 
             # If the robot can move DOWN
@@ -239,7 +242,8 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                possible_successors.append((move, new_state))
+                if self.cache.get(new_state) is None:
+                    possible_successors.append((move, new_state))
 
 
             # If the robot can move LEFT
@@ -261,7 +265,8 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                possible_successors.append((move, new_state))
+                if self.cache.get(new_state) is None:
+                    possible_successors.append((move, new_state))
 
             # If the robot can move RIGHT
             if self.legal_moves[x][y][3] and state.robots.get((x, y + 1)) is None and state.last_move != f"LEFT{{{id}}}":
@@ -284,7 +289,8 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                possible_successors.append((move, new_state))
+                if self.cache.get(new_state) is None:
+                    possible_successors.append((move, new_state))
 
         return possible_successors
 
