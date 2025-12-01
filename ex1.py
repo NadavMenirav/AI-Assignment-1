@@ -69,9 +69,6 @@ class WateringProblem(search.Problem):
         search.Problem.__init__(self, initial)
         self.initial = State(initial = initial)
         self.cache = {}
-        self.hit = 0
-        self.miss = 0
-
 
     def successor(self, state: State):
 
@@ -246,7 +243,6 @@ class WateringProblem(search.Problem):
             if value != 0: return False
 
         # All plants are watered
-        print(f"hit: {self.hit}, miss: {self.miss}")
         return True
 
 
@@ -256,10 +252,8 @@ class WateringProblem(search.Problem):
         cache_val = self.cache.get(node.state)
 
         if cache_val is not None:
-            self.hit += 1
             return cache_val
 
-        self.miss += 1
         # This is an admissible heuristic, we need at least the remaining WU for the plants,
         # plus the remaining WU the robots need to load
         # In addition, we calculate the shortest path a robot need to do in order to reach a state it can water a plant
