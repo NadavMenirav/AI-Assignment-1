@@ -140,16 +140,12 @@ class WateringProblem(search.Problem):
 
             if self.legal_moves[x][y][0] and (x - 1, y) not in closed:
                 q.append(((x - 1, y), parent_distance + 1))
-                closed.add((x - 1, y))
             if self.legal_moves[x][y][1] and (x + 1, y) not in closed:
                 q.append(((x + 1, y), parent_distance + 1))
-                closed.add((x + 1, y))
             if self.legal_moves[x][y][2] and (x, y - 1) not in closed:
                 q.append(((x, y - 1), parent_distance + 1))
-                closed.add((x, y - 1))
             if self.legal_moves[x][y][3] and (x, y + 1) not in closed:
                 q.append(((x, y + 1), parent_distance + 1))
-                closed.add((x, y + 1))
 
     def bfs_distance(self, coordinate1: tuple[int, int], coordinate2: tuple[int, int]):
         distance = self.distances.get((coordinate1, coordinate2))
