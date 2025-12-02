@@ -138,13 +138,13 @@ class WateringProblem(search.Problem):
 
             closed.add(current_coordinate)
 
-            if self.legal_moves[x][y][0]:
+            if self.legal_moves[x][y][0] and (x - 1, y) not in closed:
                 q.append(((x - 1, y), parent_distance + 1))
-            if self.legal_moves[x][y][1]:
+            if self.legal_moves[x][y][1] and (x + 1, y) not in closed:
                 q.append(((x + 1, y), parent_distance + 1))
-            if self.legal_moves[x][y][2]:
+            if self.legal_moves[x][y][2] and (x, y - 1) not in closed:
                 q.append(((x, y - 1), parent_distance + 1))
-            if self.legal_moves[x][y][3]:
+            if self.legal_moves[x][y][3] and (x, y + 1) not in closed:
                 q.append(((x, y + 1), parent_distance + 1))
 
     def bfs_distance(self, coordinate1: tuple[int, int], coordinate2: tuple[int, int]):
@@ -398,8 +398,7 @@ class WateringProblem(search.Problem):
             # We use Manhattan distances
             current_shortest_path_to_plant = min(
                 (
-
-                    abs(x_robot - x_plant) + abs(y_robot - y_plant)
+                    self.bfs_distance((x_robot, y_robot), (x_plant, y_plant))
                     for ((x_plant, y_plant), remaining_wu) in node.state.plants.items()
                     if remaining_wu > 0
                 ),
@@ -413,7 +412,7 @@ class WateringProblem(search.Problem):
             # Now we calculate its closest tap
             current_shortest_path_to_tap = min(
                 (
-                    abs(x_robot - x_tap) + abs(y_robot - y_tap)
+                    self.bfs_distance((x_robot, y_robot), (x_tap, y_tap))
                     for ((x_tap, y_tap), remaining_wu) in node.state.taps.items()
                     if remaining_wu > 0
                 ),
@@ -444,10 +443,8 @@ class WateringProblem(search.Problem):
                     # Now we iterate over all pairs of tap and plant and pick the pair the robot should go
 
                     current_shortest_path_to_tap_then_plant = min(
-                        abs(x_robot - x_tap)
-                        + abs(y_robot - y_tap)
-                        + abs(x_plant - x_tap)
-                        + abs(y_plant - y_tap)
+                        self.bfs_distance((x_robot, y_robot), (x_tap, y_tap))
+                        + self.bfs_distance((x_plant, y_plant), (x_tap, y_tap))
                         for ((x_tap, y_tap), remaining_wu_tap) in node.state.taps.items()
                         for ((x_plant, y_plant), remaining_wu_plant) in node.state.plants.items()
                         if remaining_wu_plant > 0 and remaining_wu_tap > 0
