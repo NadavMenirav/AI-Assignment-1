@@ -199,7 +199,8 @@ class WateringProblem(search.Problem):
 
                     # Deleting the previous state of plant and inserting the new one
                     del new_state.plants[(x, y)]
-                    new_state.plants[new_plant_key_tuple] = new_plant_value
+                    if new_plant_value > 0:
+                        new_state.plants[new_plant_key_tuple] = new_plant_value
 
                     # Inserting the new state to the possible next states
                     if self.cache.get(new_state) is None:
@@ -242,7 +243,8 @@ class WateringProblem(search.Problem):
 
                     # Deleting the previous state of tap and inserting the new one
                     del new_state.taps[(x, y)]
-                    new_state.taps[new_tap_key_tuple] = new_tap_value
+                    if new_tap_value > 0:
+                        new_state.taps[new_tap_key_tuple] = new_tap_value
 
                     # Inserting the new state to the possible next states
                     if self.cache.get(new_state) is None:
@@ -363,12 +365,7 @@ class WateringProblem(search.Problem):
     def goal_test(self, state: State) -> bool:
         """ given a state, checks if this is the goal state, compares to the created goal state returns True/False"""
         # If there is a plant which still needs water, we have not reached the goal yet.
-        for value in state.plants.values():
-            if value != 0: return False
-
-        # All plants are watered
-        return True
-
+        return len(state.plants) == 0
 
     def h_astar(self, node):
         """ This is the heuristic. It gets a node (not a state)
