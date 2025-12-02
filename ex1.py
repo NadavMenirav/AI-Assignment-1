@@ -22,7 +22,7 @@ class State:
     robots_load = None
 
 
-    def __init__(self, initial = None, size = None, walls = None, taps = None, plants = None, robots = None, last_move = None, plants_need = None, robots_load = None):
+    def __init__(self, initial = None, size = None, walls = None, taps = None, plants = None, robots = None, last_move = None, plants_need = None, robots_load = None, taps_have = None):
         # If we construct using initial
         if initial is not None:
             State.size = initial[SIZE]
@@ -37,6 +37,7 @@ class State:
             self.last_move = None
             self.plants_need = sum(self.plants.values())
             self.robots_load = sum(load for (id, load, capacity) in self.robots.values())
+            self.taps_have = sum(self.taps.values())
 
         # If we construct using size, walls, taps, plants, robots
         else:
@@ -49,6 +50,7 @@ class State:
             self.last_move = last_move
             self.plants_need = plants_need
             self.robots_load = robots_load
+            self.taps_have = taps_have
 
     def __hash__(self):
         if self.hash is not None:
@@ -188,7 +190,8 @@ class WateringProblem(search.Problem):
                                       robots = dict(state.robots),
                                       last_move = move,
                                       plants_need = state.plants_need - 1,
-                                      robots_load = state.robots_load - 1)
+                                      robots_load = state.robots_load - 1,
+                                      taps_have = state.taps_have)
 
                     # Deleting the previous state of robot and inserting the new one
                     del new_state.robots[(x, y)]
@@ -203,7 +206,7 @@ class WateringProblem(search.Problem):
                         possible_successors.append((move, new_state))
 
                     # If there is only one robot, there is no reason not to pour all he has onto the robot
-                    if number_of_robots == 1: continue
+                    if (number_of_robots == 1 and state.plants_need > 1) or water_needed_in_plant_under_robot == state.plants_need: continue
 
 
             # We now want to check whether the robot can load more WU from a tap
@@ -230,7 +233,8 @@ class WateringProblem(search.Problem):
                                       robots = dict(state.robots),
                                       last_move = move,
                                       plants_need = state.plants_need,
-                                      robots_load = state.robots_load + 1)
+                                      robots_load = state.robots_load + 1,
+                                      taps_have = state.taps_have - 1)
 
                     # Deleting the previous state of robot and inserting the new one
                     del new_state.robots[(x, y)]
@@ -246,7 +250,7 @@ class WateringProblem(search.Problem):
 
                     # If there is one robot he should fill his tank until full
                     # Or until he has enough WU to water all plants
-                    if number_of_robots == 1: continue
+                    if (number_of_robots == 1 and capacity + 1 < state.plants_need) or (water_available_in_tap_under_robot == state.taps_have): continue
 
 
             # If the robot can move UP
@@ -265,7 +269,8 @@ class WateringProblem(search.Problem):
                                   robots = dict(state.robots),
                                   last_move = move,
                                   plants_need = state.plants_need,
-                                  robots_load = state.robots_load)
+                                  robots_load = state.robots_load,
+                                  taps_have = state.taps_have)
                 del new_state.robots[(x, y)]
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
@@ -290,7 +295,8 @@ class WateringProblem(search.Problem):
                                   robots = dict(state.robots),
                                   last_move = move,
                                   plants_need = state.plants_need,
-                                  robots_load = state.robots_load)
+                                  robots_load = state.robots_load,
+                                  taps_have = state.taps_have)
                 del new_state.robots[(x, y)]
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
@@ -315,7 +321,8 @@ class WateringProblem(search.Problem):
                                   robots = dict(state.robots),
                                   last_move = move,
                                   plants_need = state.plants_need,
-                                  robots_load = state.robots_load)
+                                  robots_load = state.robots_load,
+                                  taps_have = state.taps_have)
                 del new_state.robots[(x, y)]
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
@@ -339,7 +346,8 @@ class WateringProblem(search.Problem):
                                   robots = dict(state.robots),
                                   last_move = move,
                                   plants_need = state.plants_need,
-                                  robots_load = state.robots_load)
+                                  robots_load = state.robots_load,
+                                  taps_have = state.taps_have)
 
                 # Deleting the robot from its previous position and adding the new position
                 del new_state.robots[(x, y)]
@@ -456,9 +464,6 @@ class WateringProblem(search.Problem):
 
         heuristic = shortest_path_to_water + wu_needed
 
-        if heuristic + node.path_cost > self.upper_bound:
-            self.cache[node.state] = float('inf')
-            return float('inf')
         self.cache[node.state] = heuristic
         return heuristic
 
