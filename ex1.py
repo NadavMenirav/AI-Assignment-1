@@ -126,8 +126,8 @@ class WateringProblem(search.Problem):
         while len(q) > 0:
             current = q.pop()
             current_coordinate = current[0]
-            x = current[0][0]
-            y = current[0][1]
+            x = current_coordinate[0]
+            y = current_coordinate[1]
             parent_distance = current[1]
 
             if current_coordinate in closed:
