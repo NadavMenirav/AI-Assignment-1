@@ -406,7 +406,7 @@ class WateringProblem(search.Problem):
             else:
                 current_shortest_path_to_plant = min(
 
-                        self.bfs_distance((x_robot, y_robot), (x_plant, y_plant))
+                        self.bfs_distance( (x_plant, y_plant), (x_robot, y_robot))
                         for ((x_plant, y_plant), remaining_wu) in node.state.plants.items()
                         if remaining_wu > 0
 
@@ -423,7 +423,7 @@ class WateringProblem(search.Problem):
             else:
                 current_shortest_path_to_tap = min(
 
-                        self.bfs_distance((x_robot, y_robot), (x_tap, y_tap))
+                        self.bfs_distance( (x_tap, y_tap), (x_robot, y_robot))
                         for ((x_tap, y_tap), remaining_wu) in node.state.taps.items()
                         if remaining_wu > 0
 
@@ -454,7 +454,7 @@ class WateringProblem(search.Problem):
                     # Now we iterate over all pairs of tap and plant and pick the pair the robot should go
 
                     current_shortest_path_to_tap_then_plant = min(
-                        self.bfs_distance((x_robot, y_robot), (x_tap, y_tap))
+                        self.bfs_distance( (x_tap, y_tap), (x_robot, y_robot))
                         + self.bfs_distance((x_plant, y_plant), (x_tap, y_tap))
                         for ((x_tap, y_tap), remaining_wu_tap) in node.state.taps.items()
                         for ((x_plant, y_plant), remaining_wu_plant) in node.state.plants.items()
