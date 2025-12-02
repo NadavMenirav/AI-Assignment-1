@@ -408,12 +408,12 @@ class WateringProblem(search.Problem):
                 current_shortest_path_to_plant = -1
             else:
                 current_shortest_path_to_plant = min(
-                    (
+
                         self.bfs_distance((x_robot, y_robot), (x_plant, y_plant))
                         for ((x_plant, y_plant), remaining_wu) in node.state.plants.items()
                         if remaining_wu > 0
-                    ),
-                    default = -1
+
+
                 )
 
             # If all plants are watered we return the heuristic 0
@@ -425,12 +425,12 @@ class WateringProblem(search.Problem):
                 current_shortest_path_to_tap = -1
             else:
                 current_shortest_path_to_tap = min(
-                    (
+
                         self.bfs_distance((x_robot, y_robot), (x_tap, y_tap))
                         for ((x_tap, y_tap), remaining_wu) in node.state.taps.items()
                         if remaining_wu > 0
-                    ),
-                    default = -1
+
+
                 )
 
             # If all taps are empty (and not all plants are fully watered) we have to go to a plant
