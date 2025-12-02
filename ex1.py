@@ -206,7 +206,7 @@ class WateringProblem(search.Problem):
                         possible_successors.append((move, new_state))
 
                     # If there is only one robot, there is no reason not to pour all he has onto the robot
-                    if (number_of_robots == 1 and state.plants_need > 1) or water_needed_in_plant_under_robot == state.plants_need: continue
+                    if number_of_robots == 1 or water_needed_in_plant_under_robot == state.plants_need: continue
 
 
             # We now want to check whether the robot can load more WU from a tap
@@ -250,7 +250,7 @@ class WateringProblem(search.Problem):
 
                     # If there is one robot he should fill his tank until full
                     # Or until he has enough WU to water all plants
-                    if (number_of_robots == 1 and capacity + 1 < state.plants_need) or (water_available_in_tap_under_robot == state.taps_have): continue
+                    if number_of_robots == 1 and load + 1 < state.plants_need: continue
 
 
             # If the robot can move UP
