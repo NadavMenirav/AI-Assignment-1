@@ -492,6 +492,8 @@ def main():
                (problem_10x10_single,       "problem_10x10_single",     106),
                (problem_12x12_snake,        "problem_12x12_snake",      249),
                (problem_12x12_snake_hard,   "problem_12x12_snake_hard", 343)]
+
+    problems = [(problem_load,               "problem_load",             65)]
     i = 1
     is_failed = False
     start = time.time()

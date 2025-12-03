@@ -431,74 +431,39 @@ class WateringProblem(search.Problem):
         # This represents the shortest path a robot can do from its point to a tap and then to a plant
         current_shortest_path_to_tap_then_plant = float('inf')
 
+        still_need = node.state.plants_need - node.state.robots_load
+        if node.state.plants_need == 0:
+            self.cache[node.state] = 0
+            return 0
+
+        if still_need > node.state.taps_have :
+            self.cache[node.state] = float('inf')
+            return float('inf')
+
         for (x_robot, y_robot), (id, load, capacity) in node.state.robots.items():
-
-            # For every robot, if the robot has WU on him, he can either go to a tap or go to a plant
-
-            # Now we calculate the plant closest to him, if all plants are watered we return -1.
-            # We use Manhattan distances
-            if node.state.plants_need == 0:
-                current_shortest_path_to_plant = -1
+            if load == 0:
+                current_shortest = min(
+                    self.bfs_distance((x_tap, y_tap), (x_robot, y_robot))
+                    + self.bfs_distance((x_plant, y_plant), (x_tap, y_tap))
+                    for ((x_tap, y_tap), remaining_wu_tap) in node.state.taps.items()
+                    for ((x_plant, y_plant), remaining_wu_plant) in node.state.plants.items()
+                    if remaining_wu_plant > 0 and remaining_wu_tap > 0
+                )
             else:
-                current_shortest_path_to_plant = min(
-
-                        self.bfs_distance( (x_plant, y_plant), (x_robot, y_robot))
+                if still_need > 0:
+                    current_shortest = min(
+                    self.bfs_distance((x_tap, y_tap), (x_robot, y_robot))
+                    + self.bfs_distance((x_plant, y_plant), (x_tap, y_tap))
+                    for ((x_tap, y_tap), remaining_wu_tap) in node.state.taps.items()
+                    for ((x_plant, y_plant), remaining_wu_plant) in node.state.plants.items()
+                    if remaining_wu_plant > 0 and remaining_wu_tap > 0
+                    )
+                else:
+                    current_shortest = min(
+                        self.bfs_distance((x_plant, y_plant), (x_robot, y_robot))
                         for ((x_plant, y_plant), remaining_wu) in node.state.plants.items()
                         if remaining_wu > 0
-
-
-                )
-
-            # If all plants are watered we return the heuristic 0
-            if current_shortest_path_to_plant == -1:
-                return 0
-
-            # Now we calculate its closest tap
-            if node.state.taps_have == 0:
-                current_shortest_path_to_tap = -1
-            else:
-                current_shortest_path_to_tap = min(
-
-                        self.bfs_distance( (x_tap, y_tap), (x_robot, y_robot))
-                        for ((x_tap, y_tap), remaining_wu) in node.state.taps.items()
-                        if remaining_wu > 0
-
-
-                )
-
-            # If all taps are empty (and not all plants are fully watered) we have to go to a plant
-            if current_shortest_path_to_tap == -1:
-
-                # If there are no WU left in the taps, a robot which has WU on him need to go to the closest plant
-                # And robots that have no WU on them, their shortest path is infinity
-                if load > 0:
-                    current_shortest = current_shortest_path_to_plant
-
-                else:
-                    current_shortest = float('inf')
-
-            # If there are WU on the taps, the shortest path (but not always the best path) will be
-            # 1. If a robot has WU on him, he will go to the nearest plant
-            # 2. If a robot has no WU on him, in order to help he has to go to a near tap and then to a plant
-            else:
-
-                if load > 0:
-                    current_shortest = current_shortest_path_to_plant
-
-                else:
-
-                    # Now we iterate over all pairs of tap and plant and pick the pair the robot should go
-
-                    current_shortest_path_to_tap_then_plant = min(
-                        self.bfs_distance( (x_tap, y_tap), (x_robot, y_robot))
-                        + self.bfs_distance((x_plant, y_plant), (x_tap, y_tap))
-                        for ((x_tap, y_tap), remaining_wu_tap) in node.state.taps.items()
-                        for ((x_plant, y_plant), remaining_wu_plant) in node.state.plants.items()
-                        if remaining_wu_plant > 0 and remaining_wu_tap > 0
                     )
-
-                    current_shortest = current_shortest_path_to_tap_then_plant
-
             if current_shortest < shortest_path_to_water: shortest_path_to_water = current_shortest
 
         heuristic = shortest_path_to_water + wu_needed
