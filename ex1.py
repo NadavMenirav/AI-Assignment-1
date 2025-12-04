@@ -113,6 +113,12 @@ class WateringProblem(search.Problem):
 
         walls = self.initial.walls
 
+        # Initializing the bfs for the plants and taps
+        for ((i, j), needed) in self.initial.plants.items():
+            self.BFS((i, j))
+        for ((i, j), have) in self.initial.taps.items():
+            self.BFS((i, j))
+
         # Now we want to initialize the matrix with the legal moves available
         for x in range(height):
             for y in range(width):
