@@ -21,6 +21,9 @@ class State:
     last_move = None
     plants_need = None
     robots_load = None
+    objective: tuple[int, int]
+    active_only: bool
+
 
     # We know that the first robot that loads is the only one loading and pouring until he pours all his WU
     # Other robots can only move if they block him
@@ -29,7 +32,7 @@ class State:
 
     def __init__(self, initial = None, size = None, walls = None, taps = None, plants = None, robots = None,
                  last_move = None, plants_need = None, robots_load = None, taps_have = None, robot_last_moves = None,
-                 current_active_robot = None):
+                 current_active_robot = None, objective = None, active_only = False):
         # If we construct using initial
         if initial is not None:
             State.size = initial[SIZE]
@@ -47,6 +50,8 @@ class State:
             self.robots_load = sum(load for (id, load, capacity) in self.robots.values())
             self.taps_have = sum(self.taps.values())
             self.current_active_robot = None
+            self.objective = (-1, -1)
+            self.active_only = False
 
         # If we construct using size, walls, taps, plants, robots
         else:
@@ -62,6 +67,8 @@ class State:
             self.robots_last_moves = robot_last_moves
             self.taps_have = taps_have
             self.current_active_robot = current_active_robot
+            self.objective = objective
+            self.active_only = active_only
 
     def __hash__(self):
         if self.hash is not None:
@@ -206,6 +213,7 @@ class WateringProblem(search.Problem):
         number_of_taps = len(state.taps)
         current_active = state.current_active_robot
 
+
         possible_successors = []
         for (x, y), (id, load, capacity) in state.robots.items():
 
@@ -281,34 +289,125 @@ class WateringProblem(search.Problem):
 
                         # Creating the new state
                         move = f"LOAD{{{id}}}"
-                        new_state = State(size = state.size,
-                                          walls = state.walls,
-                                          taps = dict(state.taps),
-                                          plants = state.plants,
-                                          robots = dict(state.robots),
-                                          last_move = move,
-                                          plants_need = state.plants_need,
-                                          robots_load = state.robots_load + 1,
-                                          taps_have = state.taps_have - 1,
-                                          robot_last_moves = state.robots_last_moves,
-                                          current_active_robot = id)
 
-                        # robot last moves
-                        del new_state.robots_last_moves[id]
-                        new_state.robots_last_moves[id] = "LOAD"
 
-                        # Deleting the previous state of robot and inserting the new one
-                        del new_state.robots[(x, y)]
-                        new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+                        if current_active == id:
+                            new_state = State(size = state.size,
+                                                walls = state.walls,
+                                                  taps = dict(state.taps),
+                                                  plants = state.plants,
+                                                  robots = dict(state.robots),
+                                                  last_move = move,
+                                                  plants_need = state.plants_need,
+                                                  robots_load = state.robots_load + 1,
+                                                  taps_have = state.taps_have - 1,
+                                                  robot_last_moves = state.robots_last_moves,
+                                                  current_active_robot = id,
+                                                  objective = state.objective,
+                                                  active_only = state.active_only)
 
-                        # Deleting the previous state of tap and inserting the new one
-                        del new_state.taps[(x, y)]
-                        if new_tap_value > 0:
-                            new_state.taps[new_tap_key_tuple] = new_tap_value
+                            # robot last moves
+                            del new_state.robots_last_moves[id]
+                            new_state.robots_last_moves[id] = "LOAD"
 
-                        # Inserting the new state to the possible next states
-                        if self.cache.get(new_state) is None:
-                            possible_successors.append((move, new_state))
+                            # Deleting the previous state of robot and inserting the new one
+                            del new_state.robots[(x, y)]
+                            new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+
+                            # Deleting the previous state of tap and inserting the new one
+                            del new_state.taps[(x, y)]
+                            if new_tap_value > 0:
+                                new_state.taps[new_tap_key_tuple] = new_tap_value
+
+                            # Inserting the new state to the possible next states
+                            if self.cache.get(new_state) is None:
+                                possible_successors.append((move, new_state))
+
+
+
+                        else:
+                            for ((i, j), needed) in state.plants.items():
+                                path_to_objective = self.bfs_paths.get((i, j), (x, y))
+
+                                # Now checking if there is a robot on the path to the objective
+                                is_active_only = True
+                                for (x_else, y_else) in state.robots.keys():
+                                    if (x_else, y_else) != (x, y) and (x_else, y_else) in path_to_objective:
+                                        is_active_only = False
+
+                                new_state = State(size = state.size,
+                                                  walls = state.walls,
+                                                  taps = dict(state.taps),
+                                                  plants = state.plants,
+                                                  robots = dict(state.robots),
+                                                  last_move = move,
+                                                  plants_need = state.plants_need,
+                                                  robots_load = state.robots_load + 1,
+                                                  taps_have = state.taps_have - 1,
+                                                  robot_last_moves = state.robots_last_moves,
+                                                  current_active_robot = id,
+                                                  objective = (i, j),
+                                                  active_only = is_active_only)
+
+                                # robot last moves
+                                del new_state.robots_last_moves[id]
+                                new_state.robots_last_moves[id] = "LOAD"
+
+                                # Deleting the previous state of robot and inserting the new one
+                                del new_state.robots[(x, y)]
+                                new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+
+                                # Deleting the previous state of tap and inserting the new one
+                                del new_state.taps[(x, y)]
+                                if new_tap_value > 0:
+                                    new_state.taps[new_tap_key_tuple] = new_tap_value
+
+                                # Inserting the new state to the possible next states
+                                if self.cache.get(new_state) is None:
+                                    possible_successors.append((move, new_state))
+
+
+                            for ((i, j), have) in state.taps.items():
+                                path_to_objective = self.bfs_paths.get((i, j), (x, y))
+
+                                # Now checking if there is a robot on the path to the objective
+                                is_active_only = True
+                                for (x_else, y_else) in state.robots.keys():
+                                    if (x_else, y_else) != (x, y) and (x_else, y_else) in path_to_objective:
+                                        is_active_only = False
+
+
+                                new_state = State(size=state.size,
+                                                  walls=state.walls,
+                                                  taps=dict(state.taps),
+                                                  plants=state.plants,
+                                                  robots=dict(state.robots),
+                                                  last_move=move,
+                                                  plants_need=state.plants_need,
+                                                  robots_load=state.robots_load + 1,
+                                                  taps_have=state.taps_have - 1,
+                                                  robot_last_moves=state.robots_last_moves,
+                                                  current_active_robot=id,
+                                                  objective=(i, j),
+                                                  active_only=is_active_only)
+
+                                # robot last moves
+                                del new_state.robots_last_moves[id]
+                                new_state.robots_last_moves[id] = "LOAD"
+
+                                # Deleting the previous state of robot and inserting the new one
+                                del new_state.robots[(x, y)]
+                                new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+
+                                # Deleting the previous state of tap and inserting the new one
+                                del new_state.taps[(x, y)]
+                                if new_tap_value > 0:
+                                    new_state.taps[new_tap_key_tuple] = new_tap_value
+
+                                # Inserting the new state to the possible next states
+                                if self.cache.get(new_state) is None:
+                                    possible_successors.append((move, new_state))
+
 
                         # If there is one robot he should fill his tank until full
                         # Or until he has enough WU to water all plants
