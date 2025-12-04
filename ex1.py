@@ -23,10 +23,13 @@ class State:
     robots_load = None
 
     # We know that the first robot that loads is the only one loading and pouring until he pours all his WU
+    # Other robots can only move if they block him
     current_active_robot = None
 
 
-    def __init__(self, initial = None, size = None, walls = None, taps = None, plants = None, robots = None, last_move = None, plants_need = None, robots_load = None, taps_have = None, robot_last_moves = None, current_active_robot = None):
+    def __init__(self, initial = None, size = None, walls = None, taps = None, plants = None, robots = None,
+                 last_move = None, plants_need = None, robots_load = None, taps_have = None, robot_last_moves = None,
+                 current_active_robot = None):
         # If we construct using initial
         if initial is not None:
             State.size = initial[SIZE]
@@ -171,6 +174,7 @@ class WateringProblem(search.Problem):
         """ Generates the successor states returns [(action, achieved_states, ...)]"""
         number_of_robots = len(state.robots)
         number_of_taps = len(state.taps)
+        current_active = state.current_active_robot
 
         possible_successors = []
         for (x, y), (id, load, capacity) in state.robots.items():
@@ -202,7 +206,8 @@ class WateringProblem(search.Problem):
                                       plants_need = state.plants_need - 1,
                                       robots_load = state.robots_load - 1,
                                       taps_have = state.taps_have,
-                                      robot_last_moves = state.robots_last_moves)
+                                      robot_last_moves = state.robots_last_moves,
+                                      current_active_robot = None if load - 1 == 0 else current_active)
 
                     # robot last moves
                     del new_state.robots_last_moves[id]
@@ -229,58 +234,60 @@ class WateringProblem(search.Problem):
 
 
             # We now want to check whether the robot can load more WU from a tap
-            if capacity - load > 0 and load <= sum(state.plants.values()):
+            if current_active == id or current_active is None:
+                if capacity - load > 0 and load < state.plants_need:
 
-                # We now want to check whether the robot is on a tap it can load water from
-                # We don't care whether there is a tap that can give 0 WU or if there isn't a tap at all
-                water_available_in_tap_under_robot = state.taps.get((x, y), 0)
-                if water_available_in_tap_under_robot > 0:
-                    # Changing the robot's load
-                    new_robot_key_tuple = (x, y)
-                    new_robot_value_tuple = (id, load + 1, capacity)
+                    # We now want to check whether the robot is on a tap it can load water from
+                    # We don't care whether there is a tap that can give 0 WU or if there isn't a tap at all
+                    water_available_in_tap_under_robot = state.taps.get((x, y), 0)
+                    if water_available_in_tap_under_robot > 0:
+                        # Changing the robot's load
+                        new_robot_key_tuple = (x, y)
+                        new_robot_value_tuple = (id, load + 1, capacity)
 
-                    # Changing the tap
-                    new_tap_key_tuple = (x, y)
-                    new_tap_value = water_available_in_tap_under_robot - 1
+                        # Changing the tap
+                        new_tap_key_tuple = (x, y)
+                        new_tap_value = water_available_in_tap_under_robot - 1
 
-                    # Creating the new state
-                    move = f"LOAD{{{id}}}"
-                    new_state = State(size = state.size,
-                                      walls = state.walls,
-                                      taps = dict(state.taps),
-                                      plants = state.plants,
-                                      robots = dict(state.robots),
-                                      last_move = move,
-                                      plants_need = state.plants_need,
-                                      robots_load = state.robots_load + 1,
-                                      taps_have = state.taps_have - 1,
-                                      robot_last_moves = state.robots_last_moves)
+                        # Creating the new state
+                        move = f"LOAD{{{id}}}"
+                        new_state = State(size = state.size,
+                                          walls = state.walls,
+                                          taps = dict(state.taps),
+                                          plants = state.plants,
+                                          robots = dict(state.robots),
+                                          last_move = move,
+                                          plants_need = state.plants_need,
+                                          robots_load = state.robots_load + 1,
+                                          taps_have = state.taps_have - 1,
+                                          robot_last_moves = state.robots_last_moves,
+                                          current_active_robot = id)
 
-                    # robot last moves
-                    del new_state.robots_last_moves[id]
-                    new_state.robots_last_moves[id] = "LOAD"
+                        # robot last moves
+                        del new_state.robots_last_moves[id]
+                        new_state.robots_last_moves[id] = "LOAD"
 
-                    # Deleting the previous state of robot and inserting the new one
-                    del new_state.robots[(x, y)]
-                    new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+                        # Deleting the previous state of robot and inserting the new one
+                        del new_state.robots[(x, y)]
+                        new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
-                    # Deleting the previous state of tap and inserting the new one
-                    del new_state.taps[(x, y)]
-                    if new_tap_value > 0:
-                        new_state.taps[new_tap_key_tuple] = new_tap_value
+                        # Deleting the previous state of tap and inserting the new one
+                        del new_state.taps[(x, y)]
+                        if new_tap_value > 0:
+                            new_state.taps[new_tap_key_tuple] = new_tap_value
 
-                    # Inserting the new state to the possible next states
-                    if self.cache.get(new_state) is None:
-                        possible_successors.append((move, new_state))
+                        # Inserting the new state to the possible next states
+                        if self.cache.get(new_state) is None:
+                            possible_successors.append((move, new_state))
 
-                    # If there is one robot he should fill his tank until full
-                    # Or until he has enough WU to water all plants
-                    if number_of_robots == 1 or (
-                            number_of_taps == 1
-                            and state.robots_last_moves.get(id) == "LOAD"
-                            and load < min(state.plants.values())
-                    ):
-                        continue
+                        # If there is one robot he should fill his tank until full
+                        # Or until he has enough WU to water all plants
+                        if number_of_robots == 1 or (
+                                number_of_taps == 1
+                                and state.robots_last_moves.get(id) == "LOAD"
+                                and load < min(state.plants.values())
+                        ):
+                            continue
 
 
             # If the robot can move UP
@@ -301,7 +308,8 @@ class WateringProblem(search.Problem):
                                   plants_need = state.plants_need,
                                   robots_load = state.robots_load,
                                   taps_have = state.taps_have,
-                                  robot_last_moves = state.robots_last_moves)
+                                  robot_last_moves = state.robots_last_moves,
+                                  current_active_robot = current_active)
 
                 # robot last moves
                 del new_state.robots_last_moves[id]
@@ -333,7 +341,8 @@ class WateringProblem(search.Problem):
                                   plants_need = state.plants_need,
                                   robots_load = state.robots_load,
                                   taps_have = state.taps_have,
-                                  robot_last_moves = state.robots_last_moves)
+                                  robot_last_moves = state.robots_last_moves,
+                                  current_active_robot = current_active)
 
                 # robot last moves
                 del new_state.robots_last_moves[id]
@@ -365,7 +374,8 @@ class WateringProblem(search.Problem):
                                   plants_need = state.plants_need,
                                   robots_load = state.robots_load,
                                   taps_have = state.taps_have,
-                                  robot_last_moves = state.robots_last_moves)
+                                  robot_last_moves = state.robots_last_moves,
+                                  current_active_robot = current_active)
 
                 # robot last moves
                 del new_state.robots_last_moves[id]
@@ -396,7 +406,8 @@ class WateringProblem(search.Problem):
                                   plants_need = state.plants_need,
                                   robots_load = state.robots_load,
                                   taps_have = state.taps_have,
-                                  robot_last_moves = state.robots_last_moves)
+                                  robot_last_moves = state.robots_last_moves,
+                                  current_active_robot = current_active)
 
                 # robot last moves
                 del new_state.robots_last_moves[id]
