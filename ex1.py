@@ -11,6 +11,7 @@ ROBOTS = "Robots"
 id = ["No numbers - I'm special!"]
 
 class State:
+
     size = (0, 0) # Size of the board. no reason to save it in every copy.
     walls: dict[tuple, bool] # The walls. no reason to save it in every copy.
     taps: dict[tuple, int]
@@ -291,7 +292,7 @@ class WateringProblem(search.Problem):
                                           current_active_robot = None,
                                           objective = None,
                                           active_only = False,
-                                          initial_cords = None,)
+                                          initial_cords = None)
 
                         # robot last moves
                         del new_state.robots_last_moves[id]
@@ -336,7 +337,7 @@ class WateringProblem(search.Problem):
                                               current_active_robot=id, # I'm still the active robot
                                               objective=(i, j),
                                               active_only=False, # I don't know if it's only me or not yet
-                                              initial_cords=(x, y), )
+                                              initial_cords=(x, y) )
 
                             # robot last moves
                             del new_state.robots_last_moves[id]
@@ -377,7 +378,7 @@ class WateringProblem(search.Problem):
                                               current_active_robot=id, # I'm still the active robot
                                               objective=(i, j),
                                               active_only=False, # I don't know if it's only me or not yet
-                                              initial_cords=(x, y), )
+                                              initial_cords=(x, y) )
 
                             # robot last moves
                             del new_state.robots_last_moves[id]
@@ -432,8 +433,8 @@ class WateringProblem(search.Problem):
 
                         new_state = State(size=state.size,
                                           walls=state.walls,
-                                          taps=state.taps,
-                                          plants=dict(state.plants),
+                                          taps=dict(state.taps),
+                                          plants=state.plants,
                                           robots=dict(state.robots),
                                           last_move=move,
                                           plants_need=state.plants_need,
@@ -443,7 +444,7 @@ class WateringProblem(search.Problem):
                                           current_active_robot=id,  # I'm still the active robot:)
                                           objective=(i, j),
                                           active_only=False,  # I don't know if it's only me or not yet
-                                          initial_cords=(x, y), )
+                                          initial_cords=(x, y))
 
                         # robot last moves
                         del new_state.robots_last_moves[id]
@@ -473,8 +474,8 @@ class WateringProblem(search.Problem):
 
                         new_state = State(size=state.size,
                                           walls=state.walls,
-                                          taps=state.taps,
-                                          plants=dict(state.plants),
+                                          taps=dict(state.taps),
+                                          plants=state.plants,
                                           robots=dict(state.robots),
                                           last_move=move,
                                           plants_need=state.plants_need,
@@ -484,7 +485,7 @@ class WateringProblem(search.Problem):
                                           current_active_robot=id,  # I'm still the active robot:)
                                           objective=(i, j),
                                           active_only=False,  # I don't know if it's only me or not yet
-                                          initial_cords=(x, y), )
+                                          initial_cords=(x, y))
 
                         # robot last moves
                         del new_state.robots_last_moves[id]
@@ -514,7 +515,9 @@ class WateringProblem(search.Problem):
 
 
             # We want to check whether the robot has any WU on it
-            if load > 0:
+            # A robot can pour only if it has load (it is the active robot) and is on the initial cords
+            # where he didn't start going to the objective yet
+            if load > 0 and (x, y) == state.initial_cords:
 
                 # We now want to check whether the robot is on a plant it can water
                 # We don't care whether there is a plant that needs 0 WU or if there isn't a plant at all
@@ -545,9 +548,10 @@ class WateringProblem(search.Problem):
                                       robots_load = state.robots_load - 1,
                                       taps_have = state.taps_have,
                                       robot_last_moves = state.robots_last_moves,
-                                      current_active_robot = None,
-                                      objective = None,
-                                      active_only = False)
+                                      current_active_robot = new_active_robot,
+                                      objective = None if new_active_robot is None else state.objective,
+                                      active_only = False if new_active_robot is None else state.active_only,
+                                      initial_cords = None if new_active_robot is None else (x, y))
 
                     # robot last moves
                     del new_state.robots_last_moves[id]
@@ -611,8 +615,8 @@ class WateringProblem(search.Problem):
                                                   robots_load = state.robots_load + 1,
                                                   taps_have = state.taps_have - 1,
                                                   robot_last_moves = state.robots_last_moves,
-                                                  current_active_robot = id,
-                                                  objective = state.objective,
+                                                  current_active_robot = id, # I'm staying the current_active robot
+                                                  objective = state.objective, # I'm still going to my objective
                                                   active_only = state.active_only,
                                                   initial_cords = (x, y))
 
@@ -644,6 +648,8 @@ class WateringProblem(search.Problem):
                                 # If I cannot reach this plant:(
                                 if not path_to_objective: continue
 
+
+                                # Maybe redundant block
                                 # Now checking if there is a robot on the path to the objective
                                 is_active_only = True
                                 for (x_else, y_else) in state.robots.keys():
@@ -662,7 +668,8 @@ class WateringProblem(search.Problem):
                                                   robot_last_moves = state.robots_last_moves,
                                                   current_active_robot = id,
                                                   objective = (i, j),
-                                                  active_only = is_active_only)
+                                                  active_only = is_active_only,
+                                                  initial_cords = (x, y))
 
                                 # robot last moves
                                 del new_state.robots_last_moves[id]
@@ -683,6 +690,10 @@ class WateringProblem(search.Problem):
 
                             # Now we do the same thing but for all the taps! Each tap is a new objective
                             for ((i, j), have) in state.taps.items():
+
+                                # Be careful not to put duplicates! We do not want the current tap to be an objective
+                                if (i, j) == (x, y): continue
+
                                 path_to_objective = self.bfs_paths.get(((i, j), (x, y)))
 
                                 # If I cannot reach this tap:(
@@ -707,7 +718,8 @@ class WateringProblem(search.Problem):
                                                   robot_last_moves=state.robots_last_moves,
                                                   current_active_robot=id,
                                                   objective=(i, j),
-                                                  active_only=is_active_only)
+                                                  active_only=is_active_only,
+                                                  initial_cords = (x,y))
 
                                 # robot last moves
                                 del new_state.robots_last_moves[id]
@@ -743,7 +755,8 @@ class WateringProblem(search.Problem):
                     and state.robots.get((x - 1, y)) is None
                     and state.last_move != f"DOWN{{{id}}}"
                     and (not state.active_only
-                         or (state.active_only and id == current_active and (x - 1, y) in path_to_objective))):
+                         or (state.active_only and id == current_active and (x - 1, y) in path_to_objective)
+                         or (state.active_only and id != current_active and (x, y) in path_to_objective))):
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x - 1,  y)
@@ -763,7 +776,8 @@ class WateringProblem(search.Problem):
                                   robot_last_moves = state.robots_last_moves,
                                   current_active_robot = current_active,
                                   objective = state.objective,
-                                  active_only = state.active_only)
+                                  active_only = state.active_only,
+                                  initial_cords = state.initial_cords)
 
                 # robot last moves
                 del new_state.robots_last_moves[id]
@@ -782,7 +796,8 @@ class WateringProblem(search.Problem):
                     and state.robots.get((x + 1, y)) is None
                     and state.last_move != f"UP{{{id}}}"
                     and (not state.active_only
-                         or (state.active_only and id == current_active and (x + 1, y) in path_to_objective))):
+                         or (state.active_only and id == current_active and (x + 1, y) in path_to_objective)
+                         or (state.active_only and id != current_active and (x, y) in path_to_objective))):
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x + 1,  y)
@@ -802,7 +817,8 @@ class WateringProblem(search.Problem):
                                   robot_last_moves = state.robots_last_moves,
                                   current_active_robot = current_active,
                                   objective=state.objective,
-                                  active_only=state.active_only)
+                                  active_only=state.active_only,
+                                  initial_cords = state.initial_cords)
 
                 # robot last moves
                 del new_state.robots_last_moves[id]
@@ -821,7 +837,8 @@ class WateringProblem(search.Problem):
                     and state.robots.get((x, y - 1)) is None
                     and state.last_move != f"RIGHT{{{id}}}"
                     and (not state.active_only
-                         or (state.active_only and id == current_active and (x, y - 1) in path_to_objective))):
+                         or (state.active_only and id == current_active and (x, y - 1) in path_to_objective)
+                         or (state.active_only and id != current_active and (x, y) in path_to_objective))):
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x,  y - 1)
@@ -841,7 +858,8 @@ class WateringProblem(search.Problem):
                                   robot_last_moves = state.robots_last_moves,
                                   current_active_robot = current_active,
                                   objective=state.objective,
-                                  active_only=state.active_only)
+                                  active_only=state.active_only,
+                                  initial_cords = state.initial_cords)
 
                 # robot last moves
                 del new_state.robots_last_moves[id]
@@ -859,7 +877,8 @@ class WateringProblem(search.Problem):
                     and state.robots.get((x, y + 1)) is None
                     and state.last_move != f"LEFT{{{id}}}"
                     and (not state.active_only
-                         or (state.active_only and id == current_active and (x, y + 1) in path_to_objective))):
+                         or (state.active_only and id == current_active and (x, y + 1) in path_to_objective)
+                         or (state.active_only and id != current_active and (x, y) in path_to_objective))):
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x,  y + 1)
@@ -879,7 +898,8 @@ class WateringProblem(search.Problem):
                                   robot_last_moves = state.robots_last_moves,
                                   current_active_robot = current_active,
                                   objective=state.objective,
-                                  active_only=state.active_only)
+                                  active_only=state.active_only,
+                                  initial_cords = state.initial_cords)
 
                 # robot last moves
                 del new_state.robots_last_moves[id]
