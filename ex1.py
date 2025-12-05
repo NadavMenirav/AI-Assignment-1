@@ -223,6 +223,7 @@ class WateringProblem(search.Problem):
         number_of_robots = len(state.robots)
         number_of_taps = len(state.taps)
         current_active = state.current_active_robot
+        is_active_only = state.active_only
 
 
         possible_successors = []
@@ -239,11 +240,10 @@ class WateringProblem(search.Problem):
                     if (x_else, y_else) != (x, y) and (x_else, y_else) in path_to_objective:
                         is_active_only = False
 
-                state.active_only = is_active_only
-
+                #is_active_only = state.active_only or is_active_only
 
             # If it's king-only mode, and I'm not the king: TOO BAD!
-            if state.active_only and id != current_active:
+            if is_active_only and id != current_active:
                 continue
 
 
@@ -550,7 +550,7 @@ class WateringProblem(search.Problem):
                                       robot_last_moves = state.robots_last_moves,
                                       current_active_robot = new_active_robot,
                                       objective = None if new_active_robot is None else state.objective,
-                                      active_only = False if new_active_robot is None else state.active_only,
+                                      active_only = False if new_active_robot is None else is_active_only,
                                       initial_cords = None if new_active_robot is None else (x, y))
 
                     # robot last moves
@@ -617,7 +617,7 @@ class WateringProblem(search.Problem):
                                                   robot_last_moves = state.robots_last_moves,
                                                   current_active_robot = id, # I'm staying the current_active robot
                                                   objective = state.objective, # I'm still going to my objective
-                                                  active_only = state.active_only,
+                                                  active_only = is_active_only,
                                                   initial_cords = (x, y))
 
                             # robot last moves
@@ -754,9 +754,9 @@ class WateringProblem(search.Problem):
             if (self.legal_moves[x][y][0]
                     and state.robots.get((x - 1, y)) is None
                     and state.last_move != f"DOWN{{{id}}}"
-                    and (not state.active_only
-                         or (state.active_only and id == current_active and (x - 1, y) in path_to_objective)
-                         or (state.active_only and id != current_active and (x, y) in path_to_objective))):
+                    and (current_active is None
+                         or (is_active_only and id == current_active and (x - 1, y) in path_to_objective)
+                         or (current_active is not None and not is_active_only and id != current_active and (x, y) in path_to_objective))):
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x - 1,  y)
@@ -776,7 +776,7 @@ class WateringProblem(search.Problem):
                                   robot_last_moves = state.robots_last_moves,
                                   current_active_robot = current_active,
                                   objective = state.objective,
-                                  active_only = state.active_only,
+                                  active_only = is_active_only,
                                   initial_cords = state.initial_cords)
 
                 # robot last moves
@@ -795,9 +795,9 @@ class WateringProblem(search.Problem):
             if (self.legal_moves[x][y][1]
                     and state.robots.get((x + 1, y)) is None
                     and state.last_move != f"UP{{{id}}}"
-                    and (not state.active_only
-                         or (state.active_only and id == current_active and (x + 1, y) in path_to_objective)
-                         or (state.active_only and id != current_active and (x, y) in path_to_objective))):
+                    and (current_active is None
+                         or (is_active_only and id == current_active and (x + 1, y) in path_to_objective)
+                         or (current_active is not None and not is_active_only and id != current_active and (x, y) in path_to_objective))):
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x + 1,  y)
@@ -817,7 +817,7 @@ class WateringProblem(search.Problem):
                                   robot_last_moves = state.robots_last_moves,
                                   current_active_robot = current_active,
                                   objective=state.objective,
-                                  active_only=state.active_only,
+                                  active_only=is_active_only,
                                   initial_cords = state.initial_cords)
 
                 # robot last moves
@@ -836,9 +836,9 @@ class WateringProblem(search.Problem):
             if (self.legal_moves[x][y][2]
                     and state.robots.get((x, y - 1)) is None
                     and state.last_move != f"RIGHT{{{id}}}"
-                    and (not state.active_only
-                         or (state.active_only and id == current_active and (x, y - 1) in path_to_objective)
-                         or (state.active_only and id != current_active and (x, y) in path_to_objective))):
+                    and (current_active is None
+                         or (is_active_only and id == current_active and (x, y - 1) in path_to_objective)
+                         or (current_active is not None and not is_active_only and id != current_active and (x, y) in path_to_objective))):
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x,  y - 1)
@@ -858,7 +858,7 @@ class WateringProblem(search.Problem):
                                   robot_last_moves = state.robots_last_moves,
                                   current_active_robot = current_active,
                                   objective=state.objective,
-                                  active_only=state.active_only,
+                                  active_only=is_active_only,
                                   initial_cords = state.initial_cords)
 
                 # robot last moves
@@ -876,9 +876,9 @@ class WateringProblem(search.Problem):
             if (self.legal_moves[x][y][3]
                     and state.robots.get((x, y + 1)) is None
                     and state.last_move != f"LEFT{{{id}}}"
-                    and (not state.active_only
-                         or (state.active_only and id == current_active and (x, y + 1) in path_to_objective)
-                         or (state.active_only and id != current_active and (x, y) in path_to_objective))):
+                    and (current_active is None
+                         or (is_active_only and id == current_active and (x, y + 1) in path_to_objective)
+                         or (current_active is not None and not is_active_only and id != current_active and (x, y) in path_to_objective))):
 
                 # Changing the robot's position
                 new_robot_key_tuple = (x,  y + 1)
@@ -898,7 +898,7 @@ class WateringProblem(search.Problem):
                                   robot_last_moves = state.robots_last_moves,
                                   current_active_robot = current_active,
                                   objective=state.objective,
-                                  active_only=state.active_only,
+                                  active_only=is_active_only,
                                   initial_cords = state.initial_cords)
 
                 # robot last moves
