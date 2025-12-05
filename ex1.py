@@ -308,8 +308,7 @@ class WateringProblem(search.Problem):
                             new_state.plants[new_plant_key_tuple] = new_plant_value
 
                         # Inserting the new state to the possible next states
-                        if self.cache.get(new_state) is None:
-                            possible_successors.append((move, new_state))
+                        possible_successors.append((move, new_state))
 
                         continue
 
@@ -353,8 +352,7 @@ class WateringProblem(search.Problem):
                                 new_state.plants[new_plant_key_tuple] = new_plant_value
 
                             # Inserting the new state to the possible next states
-                            if self.cache.get(new_state) is None:
-                                possible_successors.append((move, new_state))
+                            possible_successors.append((move, new_state))
 
 
                         # Okay we are done with the plants as the next objectives!
@@ -394,8 +392,7 @@ class WateringProblem(search.Problem):
                                 new_state.plants[new_plant_key_tuple] = new_plant_value
 
                             # Inserting the new state to the possible next states
-                            if self.cache.get(new_state) is None:
-                                possible_successors.append((move, new_state))
+                            possible_successors.append((move, new_state))
 
 
 
@@ -460,8 +457,7 @@ class WateringProblem(search.Problem):
                             new_state.taps[new_tap_key_tuple] = new_tap_value
 
                         # Inserting the new state to the possible next states
-                        if self.cache.get(new_state) is None:
-                            possible_successors.append((move, new_state))
+                        possible_successors.append((move, new_state))
 
 
 
@@ -501,8 +497,7 @@ class WateringProblem(search.Problem):
                             new_state.plants[new_tap_key_tuple] = new_tap_value
 
                         # Inserting the new state to the possible next states
-                        if self.cache.get(new_state) is None:
-                            possible_successors.append((move, new_state))
+                        possible_successors.append((move, new_state))
 
                     # Okay wow that was long! we have successfully added all the new states:
                     # We have dealt with cases where the objective we got to was plant and cases where it was a tap.
@@ -567,8 +562,7 @@ class WateringProblem(search.Problem):
                         new_state.plants[new_plant_key_tuple] = new_plant_value
 
                     # Inserting the new state to the possible next states
-                    if self.cache.get(new_state) is None:
-                        possible_successors.append((move, new_state))
+                    possible_successors.append((move, new_state))
 
                     # If there is only one robot, there is no reason not to pour all he has onto the robot
                     if (number_of_robots == 1
@@ -634,8 +628,7 @@ class WateringProblem(search.Problem):
                                 new_state.taps[new_tap_key_tuple] = new_tap_value
 
                             # Inserting the new state to the possible next states
-                            if self.cache.get(new_state) is None:
-                                possible_successors.append((move, new_state))
+                            possible_successors.append((move, new_state))
 
 
                         # We are now crowned as the new active robot!
@@ -685,8 +678,7 @@ class WateringProblem(search.Problem):
                                     new_state.taps[new_tap_key_tuple] = new_tap_value
 
                                 # Inserting the new state to the possible next states
-                                if self.cache.get(new_state) is None:
-                                    possible_successors.append((move, new_state))
+                                possible_successors.append((move, new_state))
 
                             # Now we do the same thing but for all the taps! Each tap is a new objective
                             for ((i, j), have) in state.taps.items():
@@ -735,8 +727,7 @@ class WateringProblem(search.Problem):
                                     new_state.taps[new_tap_key_tuple] = new_tap_value
 
                                 # Inserting the new state to the possible next states
-                                if self.cache.get(new_state) is None:
-                                    possible_successors.append((move, new_state))
+                                possible_successors.append((move, new_state))
 
 
                         # If there is one robot he should fill his tank until full
@@ -787,8 +778,7 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                if self.cache.get(new_state) is None:
-                    possible_successors.append((move, new_state))
+                possible_successors.append((move, new_state))
 
 
             # If the robot can move DOWN
@@ -828,8 +818,7 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                if self.cache.get(new_state) is None:
-                    possible_successors.append((move, new_state))
+                possible_successors.append((move, new_state))
 
 
             # If the robot can move LEFT
@@ -869,8 +858,7 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                if self.cache.get(new_state) is None:
-                    possible_successors.append((move, new_state))
+                possible_successors.append((move, new_state))
 
             # If the robot can move RIGHT
             if (self.legal_moves[x][y][3]
@@ -910,8 +898,7 @@ class WateringProblem(search.Problem):
                 new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
 
                 # Adding the new state to the result of all possible states we can go to
-                if self.cache.get(new_state) is None:
-                    possible_successors.append((move, new_state))
+                possible_successors.append((move, new_state))
 
         return possible_successors
 
