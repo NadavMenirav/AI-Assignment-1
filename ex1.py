@@ -181,25 +181,25 @@ class WateringProblem(search.Problem):
 
             if self.legal_moves[x][y][0] and (x - 1, y) not in closed:
                 q.append(((x - 1, y), parent_distance + 1))
-                self.bfs_paths[coordinate, (x - 1, y)] = self.bfs_paths[(coordinate, current_coordinate)].union(
+                self.bfs_paths[(coordinate, (x - 1, y))] = self.bfs_paths[(coordinate, current_coordinate)].union(
                     {(x - 1, y)}
                 )
 
             if self.legal_moves[x][y][1] and (x + 1, y) not in closed:
                 q.append(((x + 1, y), parent_distance + 1))
-                self.bfs_paths[coordinate, (x + 1, y)] = self.bfs_paths[(coordinate, current_coordinate)].union(
+                self.bfs_paths[(coordinate, (x + 1, y))] = self.bfs_paths[(coordinate, current_coordinate)].union(
                     {(x + 1, y)}
                 )
 
             if self.legal_moves[x][y][2] and (x, y - 1) not in closed:
                 q.append(((x, y - 1), parent_distance + 1))
-                self.bfs_paths[coordinate, (x, y - 1)] = self.bfs_paths[(coordinate, current_coordinate)].union(
+                self.bfs_paths[(coordinate, (x, y - 1))] = self.bfs_paths[(coordinate, current_coordinate)].union(
                     {(x, y - 1)}
                 )
 
             if self.legal_moves[x][y][3] and (x, y + 1) not in closed:
                 q.append(((x, y + 1), parent_distance + 1))
-                self.bfs_paths[coordinate, (x, y + 1)] = self.bfs_paths[(coordinate, current_coordinate)].union(
+                self.bfs_paths[(coordinate, (x, y + 1))] = self.bfs_paths[(coordinate, current_coordinate)].union(
                     {(x, y + 1)}
                 )
 
