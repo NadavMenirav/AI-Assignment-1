@@ -22,6 +22,7 @@ class State:
     plants_need = None
     robots_load = None
     objective: tuple[int, int]
+    initial_cords: tuple[int, int]
     active_only: bool
 
 
@@ -32,7 +33,7 @@ class State:
 
     def __init__(self, initial = None, size = None, walls = None, taps = None, plants = None, robots = None,
                  last_move = None, plants_need = None, robots_load = None, taps_have = None, robot_last_moves = None,
-                 current_active_robot = None, objective = None, active_only = False):
+                 current_active_robot = None, objective = None, active_only = False, initial_cords = None):
         # If we construct using initial
         if initial is not None:
             State.size = initial[SIZE]
@@ -52,6 +53,7 @@ class State:
             self.current_active_robot = None
             self.objective = None
             self.active_only = False
+            self.initial_cords = None
 
         # If we construct using size, walls, taps, plants, robots
         else:
@@ -69,6 +71,7 @@ class State:
             self.current_active_robot = current_active_robot
             self.objective = objective
             self.active_only = active_only
+            self.initial_cords = initial_cords
 
     def __hash__(self):
         if self.hash is not None:
@@ -227,9 +230,271 @@ class WateringProblem(search.Problem):
                 continue
 
 
+            # What a miracle! We have reached the objective!
+            # The objective was either a plant or a tap, so we first need to do the thing we got here for of course
+            # After that, we need a new objective...
+            # But don't worry! We would still be able to load/pour from our current objective before going to the new
+            # one.
             if id == current_active and (x, y) == state.objective:
-                state.objective = None
-                state.active_only = False
+
+                # Now we check if the current coordinate is a plant. we don't care if there isn't a plant
+                # or if there is a plant which doesn't need water anymore
+                water_needed_in_plant_under_robot = state.plants.get((x, y), 0)
+
+                # POUR! After that, create new states with all the different objectives!
+                if water_needed_in_plant_under_robot > 0 and load > 0:
+
+                    # Changing the robot's load
+                    new_robot_key_tuple = (x, y)
+                    new_robot_value_tuple = (id, load - 1, capacity)
+
+                    # Changing the plant
+                    new_plant_key_tuple = (x, y)
+                    new_plant_value = water_needed_in_plant_under_robot - 1
+
+                    # Creating the new state
+
+                    new_active_robot = None if load - 1 == 0 else current_active
+                    move = f"POUR{{{id}}}"
+
+                    # I have lost my crown! but a new robot will be crowned as the new active state
+                    # But this is not my job, it's the job of the next iteration!
+                    # I just need to let it know that it should do it
+                    if new_active_robot is None:
+                        new_state = State(size = state.size,
+                                          walls = state.walls,
+                                          taps = state.taps,
+                                          plants = dict(state.plants),
+                                          robots = dict(state.robots),
+                                          last_move = move,
+                                          plants_need = state.plants_need - 1,
+                                          robots_load = state.robots_load - 1,
+                                          taps_have = state.taps_have,
+                                          robot_last_moves = state.robots_last_moves,
+                                          current_active_robot = None,
+                                          objective = None,
+                                          active_only = False,
+                                          initial_cords = None,)
+
+                        # robot last moves
+                        del new_state.robots_last_moves[id]
+                        new_state.robots_last_moves[id] = "POUR"
+
+                        # Deleting the previous state of robot and inserting the new one
+                        del new_state.robots[(x, y)]
+                        new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+
+                        # Deleting the previous state of plant and inserting the new one
+                        del new_state.plants[(x, y)]
+                        if new_plant_value > 0:
+                            new_state.plants[new_plant_key_tuple] = new_plant_value
+
+                        # Inserting the new state to the possible next states
+                        if self.cache.get(new_state) is None:
+                            possible_successors.append((move, new_state))
+
+                        continue
+
+                    # Phew, I'm still the active robot. But now I need to create a lot of new states for my next
+                    # objectives:
+                    if new_active_robot is not None:
+
+                        # First let's start with the plants
+                        # We need to be careful not to put the current objective as one of the next objectives
+                        for (i, j) in state.plants.keys():
+
+                            # If this objective is the same previous one.
+                            if (x, y) == (i ,j): continue
+
+                            new_state = State(size=state.size,
+                                              walls=state.walls,
+                                              taps=state.taps,
+                                              plants=dict(state.plants),
+                                              robots=dict(state.robots),
+                                              last_move=move,
+                                              plants_need=state.plants_need - 1,
+                                              robots_load=state.robots_load - 1,
+                                              taps_have=state.taps_have,
+                                              robot_last_moves=state.robots_last_moves,
+                                              current_active_robot=id, # I'm still the active robot
+                                              objective=(i, j),
+                                              active_only=False, # I don't know if it's only me or not yet
+                                              initial_cords=(x, y), )
+
+                            # robot last moves
+                            del new_state.robots_last_moves[id]
+                            new_state.robots_last_moves[id] = "POUR"
+
+                            # Deleting the previous state of robot and inserting the new one
+                            del new_state.robots[(x, y)]
+                            new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+
+                            # Deleting the previous state of plant and inserting the new one
+                            del new_state.plants[(x, y)]
+                            if new_plant_value > 0:
+                                new_state.plants[new_plant_key_tuple] = new_plant_value
+
+                            # Inserting the new state to the possible next states
+                            if self.cache.get(new_state) is None:
+                                possible_successors.append((move, new_state))
+
+
+                        # Okay we are done with the plants as the next objectives!
+                        # Now let's do the same thing but for the taps
+
+                        for (i, j) in state.taps.keys():
+
+                            # If this objective is the same previous one.
+                            if (x, y) == (i ,j): continue
+
+                            new_state = State(size=state.size,
+                                              walls=state.walls,
+                                              taps=state.taps,
+                                              plants=dict(state.plants),
+                                              robots=dict(state.robots),
+                                              last_move=move,
+                                              plants_need=state.plants_need - 1,
+                                              robots_load=state.robots_load - 1,
+                                              taps_have=state.taps_have,
+                                              robot_last_moves=state.robots_last_moves,
+                                              current_active_robot=id, # I'm still the active robot
+                                              objective=(i, j),
+                                              active_only=False, # I don't know if it's only me or not yet
+                                              initial_cords=(x, y), )
+
+                            # robot last moves
+                            del new_state.robots_last_moves[id]
+                            new_state.robots_last_moves[id] = "POUR"
+
+                            # Deleting the previous state of robot and inserting the new one
+                            del new_state.robots[(x, y)]
+                            new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+
+                            # Deleting the previous state of plant and inserting the new one
+                            del new_state.plants[(x, y)]
+                            if new_plant_value > 0:
+                                new_state.plants[new_plant_key_tuple] = new_plant_value
+
+                            # Inserting the new state to the possible next states
+                            if self.cache.get(new_state) is None:
+                                possible_successors.append((move, new_state))
+
+
+
+                    # That was a lot of new states filled with a lot of new objectives.
+                    # Now I know that I need to continue, I added all the cases in which my objective was a plant
+                    # Now for the easier part: What if my objective was not a plant and was a tap!
+                    # I now need to repeat the process, kind of exhausting, but we are near the end
+                    continue
+
+                # Now we know that the objective was a tap, let's check how many WU it has
+                water_available_in_tap_under_robot = state.taps.get((x, y), 0)
+
+                # LOAD!!! After that, create the new states
+                # We know that we are still the king! we had WU and now we are loading more!
+                # So there is no reason to crown anyone else
+                if water_available_in_tap_under_robot > 0 and capacity - load > 0 and load < state.plants_need:
+
+                    # Changing the robot's load
+                    new_robot_key_tuple = (x, y)
+                    new_robot_value_tuple = (id, load + 1, capacity)
+
+                    # Changing the tap
+                    new_tap_key_tuple = (x, y)
+                    new_tap_value = water_available_in_tap_under_robot - 1
+
+                    # Creating the new state
+                    move = f"LOAD{{{id}}}"
+
+                    # We need to iterate over all the remaining taps and plants to create objectives to them!
+                    # A lot of work but at least we are still the active robot!
+
+                    # First let's start with the plants.
+                    # There won't be any duplicates since now we are on a tap.
+                    for (i, j) in state.plants.keys():
+
+                        new_state = State(size=state.size,
+                                          walls=state.walls,
+                                          taps=state.taps,
+                                          plants=dict(state.plants),
+                                          robots=dict(state.robots),
+                                          last_move=move,
+                                          plants_need=state.plants_need,
+                                          robots_load=state.robots_load + 1,
+                                          taps_have=state.taps_have - 1,
+                                          robot_last_moves=state.robots_last_moves,
+                                          current_active_robot=id,  # I'm still the active robot:)
+                                          objective=(i, j),
+                                          active_only=False,  # I don't know if it's only me or not yet
+                                          initial_cords=(x, y), )
+
+                        # robot last moves
+                        del new_state.robots_last_moves[id]
+                        new_state.robots_last_moves[id] = "LOAD"
+
+                        # Deleting the previous state of robot and inserting the new one
+                        del new_state.robots[(x, y)]
+                        new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+
+                        # Deleting the previous state of plant and inserting the new one
+                        del new_state.taps[(x, y)]
+                        if new_tap_value > 0:
+                            new_state.taps[new_tap_key_tuple] = new_tap_value
+
+                        # Inserting the new state to the possible next states
+                        if self.cache.get(new_state) is None:
+                            possible_successors.append((move, new_state))
+
+
+
+                    # Okay we are done with the plants let's move on to the taps
+                    # Now we need to be careful not to put the current objective also as a new objective!
+                    for (i, j) in state.taps.keys():
+
+                        # Careful! Duplicates!
+                        if (x, y) == (i ,j): continue
+
+                        new_state = State(size=state.size,
+                                          walls=state.walls,
+                                          taps=state.taps,
+                                          plants=dict(state.plants),
+                                          robots=dict(state.robots),
+                                          last_move=move,
+                                          plants_need=state.plants_need,
+                                          robots_load=state.robots_load + 1,
+                                          taps_have=state.taps_have - 1,
+                                          robot_last_moves=state.robots_last_moves,
+                                          current_active_robot=id,  # I'm still the active robot:)
+                                          objective=(i, j),
+                                          active_only=False,  # I don't know if it's only me or not yet
+                                          initial_cords=(x, y), )
+
+                        # robot last moves
+                        del new_state.robots_last_moves[id]
+                        new_state.robots_last_moves[id] = "LOAD"
+
+                        # Deleting the previous state of robot and inserting the new one
+                        del new_state.robots[(x, y)]
+                        new_state.robots[new_robot_key_tuple] = new_robot_value_tuple
+
+                        # Deleting the previous state of plant and inserting the new one
+                        del new_state.taps[(x, y)]
+                        if new_tap_value > 0:
+                            new_state.plants[new_tap_key_tuple] = new_tap_value
+
+                        # Inserting the new state to the possible next states
+                        if self.cache.get(new_state) is None:
+                            possible_successors.append((move, new_state))
+
+                    # Okay wow that was long! we have successfully added all the new states:
+                    # We have dealt with cases where the objective we got to was plant and cases where it was a tap.
+                    # We have added all the new states filled with the new objectives.
+                    # The job of the next iteration is to check the 'active_only', and start the way to the new
+                    # objective!
+                    # For now, we are done with this iteration, let's continue
+                    continue
+
+
 
             # We want to check whether the robot has any WU on it
             if load > 0:
@@ -239,6 +504,7 @@ class WateringProblem(search.Problem):
                 water_needed_in_plant_under_robot = state.plants.get((x, y), 0)
 
                 if water_needed_in_plant_under_robot > 0:
+
                     # Changing the robot's load
                     new_robot_key_tuple = (x, y)
                     new_robot_value_tuple = (id, load - 1, capacity)
@@ -249,7 +515,9 @@ class WateringProblem(search.Problem):
 
                     # Creating the new state
                     new_active_robot = None if load - 1 == 0 else current_active
+
                     move = f"POUR{{{id}}}"
+
                     new_state = State(size = state.size,
                                       walls = state.walls,
                                       taps = state.taps,
@@ -260,9 +528,9 @@ class WateringProblem(search.Problem):
                                       robots_load = state.robots_load - 1,
                                       taps_have = state.taps_have,
                                       robot_last_moves = state.robots_last_moves,
-                                      current_active_robot = new_active_robot,
-                                      objective = None if new_active_robot is None else state.objective,
-                                      active_only = False if new_active_robot is None else state.active_only)
+                                      current_active_robot = None,
+                                      objective = None,
+                                      active_only = False)
 
                     # robot last moves
                     del new_state.robots_last_moves[id]
@@ -289,7 +557,14 @@ class WateringProblem(search.Problem):
 
 
             # We now want to check whether the robot can load more WU from a tap
-            if current_active == id or current_active is None:
+            # This is where we initialize the first drinker to be the active robot.
+            # We allow drinking if and only if one of the following cases is satisfied:
+            # 1. There is no active robot (everyone is free)
+            # 2. There is an active robot (which is the current robot)
+            #and we are on the first coordinates to its new objective
+            if (current_active == id and (x, y) == state.initial_cords) or current_active is None:
+
+                # Now we check if the current robot is even able to load water (and should)
                 if capacity - load > 0 and load < state.plants_need:
 
                     # We now want to check whether the robot is on a tap it can load water from
@@ -307,7 +582,7 @@ class WateringProblem(search.Problem):
                         # Creating the new state
                         move = f"LOAD{{{id}}}"
 
-
+                        # We are the active robot. we already has an objective.
                         if current_active == id:
                             new_state = State(size = state.size,
                                                 walls = state.walls,
@@ -321,7 +596,8 @@ class WateringProblem(search.Problem):
                                                   robot_last_moves = state.robots_last_moves,
                                                   current_active_robot = id,
                                                   objective = state.objective,
-                                                  active_only = state.active_only)
+                                                  active_only = state.active_only,
+                                                  initial_cords = (x, y))
 
                             # robot last moves
                             del new_state.robots_last_moves[id]
@@ -341,10 +617,14 @@ class WateringProblem(search.Problem):
                                 possible_successors.append((move, new_state))
 
 
-
+                        # We are now crowned as the new active robot!
                         else:
+                            # We now create a lot of "mini states": we are now the active robot, the king of the jungle
+                            # And for every plant and tap on the board we create an objective.
                             for ((i, j), needed) in state.plants.items():
-                                path_to_objective = self.bfs_paths.get((i, j), (x, y))
+                                path_to_objective = self.bfs_paths.get(((i, j), (x, y)))
+
+                                # If I cannot reach this plant:(
                                 if not path_to_objective: continue
 
                                 # Now checking if there is a robot on the path to the objective
@@ -384,9 +664,11 @@ class WateringProblem(search.Problem):
                                 if self.cache.get(new_state) is None:
                                     possible_successors.append((move, new_state))
 
-
+                            # Now we do the same thing but for all the taps! Each tap is a new objective
                             for ((i, j), have) in state.taps.items():
-                                path_to_objective = self.bfs_paths.get((i, j), (x, y))
+                                path_to_objective = self.bfs_paths.get(((i, j), (x, y)))
+
+                                # If I cannot reach this tap:(
                                 if not path_to_objective: continue
 
                                 # Now checking if there is a robot on the path to the objective
@@ -439,9 +721,7 @@ class WateringProblem(search.Problem):
 
 
             # If the robot can move UP
-            path_to_objective = self.bfs_paths.get(state.objective, (x, y)) or set()
-            if state.active_only and id == current_active and (x - 1, y) in path_to_objective:
-                print("UP???")
+            path_to_objective = self.bfs_paths.get((state.objective, (x, y))) or set()
             if (self.legal_moves[x][y][0]
                     and state.robots.get((x - 1, y)) is None
                     and state.last_move != f"DOWN{{{id}}}"
@@ -481,8 +761,6 @@ class WateringProblem(search.Problem):
 
 
             # If the robot can move DOWN
-            if state.active_only and id == current_active and (x + 1, y) in path_to_objective:
-                print("DOWN???")
             if (self.legal_moves[x][y][1]
                     and state.robots.get((x + 1, y)) is None
                     and state.last_move != f"UP{{{id}}}"
@@ -522,8 +800,6 @@ class WateringProblem(search.Problem):
 
 
             # If the robot can move LEFT
-            if state.active_only and id == current_active and (x, y - 1) in path_to_objective:
-                print("LEFT???")
             if (self.legal_moves[x][y][2]
                     and state.robots.get((x, y - 1)) is None
                     and state.last_move != f"RIGHT{{{id}}}"
@@ -562,8 +838,6 @@ class WateringProblem(search.Problem):
                     possible_successors.append((move, new_state))
 
             # If the robot can move RIGHT
-            if state.active_only and id == current_active and (x, y + 1) in path_to_objective:
-                print("RIGHT???")
             if (self.legal_moves[x][y][3]
                     and state.robots.get((x, y + 1)) is None
                     and state.last_move != f"LEFT{{{id}}}"
