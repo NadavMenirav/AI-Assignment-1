@@ -10,6 +10,32 @@ class Controller:
         """Initialize controller for given game model."""
         self.original_game = game
 
+
+    def is_coordinate_contain_robot(self, coordinate, robots):
+
+        for _, (r, c), _ in robots:
+            if coordinate == (r, c):
+                return True
+        return False
+
+    def is_coordinate_contain_wall(self, coordinate):
+
+        for wall in self.original_game.walls:
+            if coordinate in wall:
+                return True
+        return False
+
+    def is_action_legal(self, state, action, robot_moving):
+
+        #if action == "UP":
+
+
+
+
     def choose_next_action(self, state):
         """ Choose the next action given a state."""
-        raise ValueError("Fill the function")
+        # (robots, plants, taps, total_water_needed) = state
+        #
+        # possible_actions = []
+        # for robot in robots:
+
