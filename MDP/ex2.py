@@ -8,6 +8,7 @@ class WateringProblem:
     def __init__(self, state, original_game):
 
         # Saving the starting state for the A*
+        # State is (robots_t, plants_t, taps_t, total_water_need)
         self.initial = state
 
         # Saving the rules of the game
@@ -15,6 +16,11 @@ class WateringProblem:
         self.capacities = original_game.get_capacities()
         self.rows = original_game.rows
         self.cols = original_game.cols
+
+    # This function is used in the A* to check if we had reached our goal.
+    # The state we get have holds a total_water_need parameter which is 0 when we reach the goal
+    def is_goal(self, state):
+        return state[3] == 0 # The fourth parameter is the total_water_need
 
 
 
