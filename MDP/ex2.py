@@ -3,6 +3,17 @@ import numpy as np
 
 id = ["000000000"]
 
+class Problem:
+
+    # Defines the starting point of the problem and the goal
+    def __init__(self, initial, goal = None):
+        self.initial = initial
+        self.goal = goal
+
+    # This function is a placeholder. WateringProblem will overwrite it with the actual logic
+    def successor(self, state):
+        raise NotImplementedError
+
 # This class is a helper class to help us with running the A* algorithm
 class WateringProblem:
     def __init__(self, state, original_game):
