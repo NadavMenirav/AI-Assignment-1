@@ -1,7 +1,89 @@
 import ext_plant
 import numpy as np
+import bisect
 
 id = ["000000000"]
+
+# --- 1. THE PRIORITY QUEUE ---
+# A list that keeps itself sorted so the best option is always first.
+class PriorityQueue:
+    def __init__(self, f=lambda x: x):
+        self.A = []
+        self.f = f
+
+    def append(self, item):
+        # Insert the item in the correct order based on its cost (f)
+        bisect.insort(self.A, (self.f(item), item))
+
+    def pop(self):
+        # Remove and return the item with the lowest cost
+        return self.A.pop(0)[1]
+
+    def __len__(self):
+        return len(self.A)
+
+
+# --- 2. THE NODE ---
+# A wrapper that holds the state and remembers the path.
+class Node:
+    def __init__(self, state, parent=None, action=None, path_cost=0):
+        self.state = state
+        self.parent = parent
+        self.action = action
+        self.path_cost = path_cost
+        self.depth = 0
+        if parent:
+            self.depth = parent.depth + 1
+
+    def __repr__(self):
+        return "<Node %s>" % (self.state,)
+
+    def __lt__(self, other):
+        # Needed for sorting in the queue
+        return self.path_cost < other.path_cost
+
+    def expand(self, problem):
+        # Create new nodes for every possible move
+        return [
+            Node(next_state, self, act, problem.path_cost(self.path_cost, self.state, act, next_state))
+            for (act, next_state) in problem.successor(self.state)
+        ]
+
+
+# --- 3. THE SEARCH FUNCTION ---
+def astar_search(problem, h=None):
+    # Use the problem's heuristic if none is provided
+    h = h or problem.h
+
+    # Calculate Total Cost (f) = Past Cost (path_cost) + Future Guess (h)
+    def f(n):
+        return n.path_cost + h(n)
+
+    # The list of nodes we need to check, sorted by cost
+    frontier = PriorityQueue(f=f)
+    frontier.append(Node(problem.initial))
+
+    # Keep track of states we have already visited to avoid loops
+    explored = set()
+
+    while frontier:
+        # Get the best node
+        node = frontier.pop()
+
+        # Check if we won
+        if problem.goal_test(node.state):
+            return node
+
+        # Add to explored set (Must be a tuple to be hashable!)
+        if node.state not in explored:
+            explored.add(node.state)
+
+            # Add all neighbors to the queue
+            for child in node.expand(problem):
+                if child.state not in explored:
+                    frontier.append(child)
+
+    return None
 
 class Problem:
 
