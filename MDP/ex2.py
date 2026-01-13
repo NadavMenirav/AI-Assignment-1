@@ -23,15 +23,6 @@ class WateringProblem:
         return state[3] == 0 # The fourth parameter is the total_water_need
 
 
-
-class Controller:
-    """This class is a controller for the ext_plant game."""
-
-    def __init__(self, game: ext_plant.Game):
-        """Initialize controller for given game model."""
-        self.original_game = game
-
-
     # This function receives a point on the grid and returns a boolean value based on whether there is a robot in that
     # coordinate
     def is_coordinate_contain_robot(self, coordinate, robots, current_robot):
@@ -46,14 +37,14 @@ class Controller:
     # This function receives a point on the grid and returns a boolean value based on whether there is a wall in that
     # coordinate
     def is_coordinate_contain_wall(self, coordinate):
-        return coordinate in self.original_game.walls
+        return coordinate in self.walls
 
 
     # This function receives a point on the grid and returns a boolean value based on whether the point is a legal
     # point on the gird
     def is_on_grid(self, coordinate):
         (r, c) = coordinate
-        return 0 <= r < self.original_game.rows and 0 <= c < self.original_game.cols
+        return 0 <= r < self.rows and 0 <= c < self.cols
 
 
     # This function receives a point on the grid, the robot on that point, and all the plants, and returns whether the
@@ -80,13 +71,26 @@ class Controller:
     def can_load(self, moving_robot, taps):
 
         robot_id, (r, c), load = moving_robot
-        capacities = self.original_game.get_capacities()
+        capacities = self.capacities
         capacity = capacities[robot_id]
 
         for (i, j), water in taps:
             if (r, c) == (i, j) and water > 0 and load < capacity:
                 return True
         return False
+
+
+
+
+
+
+class Controller:
+    """This class is a controller for the ext_plant game."""
+
+    def __init__(self, game: ext_plant.Game):
+        """Initialize controller for given game model."""
+        self.original_game = game
+
 
     # This function receives an action and returns a boolean value based on whether the action is legal
     # For moving actions (UP, DOWN, LEFT, RIGHT) you need to check 3 things about the coordinate you move to:
