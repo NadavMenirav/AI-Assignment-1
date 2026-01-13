@@ -80,22 +80,10 @@ class WateringProblem:
         return False
 
 
-
-
-
-
-class Controller:
-    """This class is a controller for the ext_plant game."""
-
-    def __init__(self, game: ext_plant.Game):
-        """Initialize controller for given game model."""
-        self.original_game = game
-
-
     # This function receives an action and returns a boolean value based on whether the action is legal
     # For moving actions (UP, DOWN, LEFT, RIGHT) you need to check 3 things about the coordinate you move to:
     # 1. It is a legal point on the map
-    # 2. It does not co ntain another robot
+    # 2. It does not contain another robot
     # 3. It does not contain a wall
     def is_action_legal(self, state, action, moving_robot):
 
@@ -141,6 +129,34 @@ class Controller:
             return True
 
         return False
+
+
+
+    # # This function returns a list of all the possible next states
+    # def successor(self, state):
+    #
+    #     # This represents our current state
+    #     (robots, plants, taps, total_water_needed) = state
+    #
+    #     # Iterating over all the robots, checking what moves can they do
+    #     for robot_id, (r, c), load in robots:
+    #
+
+
+
+
+
+
+
+
+
+
+class Controller:
+    """This class is a controller for the ext_plant game."""
+
+    def __init__(self, game: ext_plant.Game):
+        """Initialize controller for given game model."""
+        self.original_game = game
 
 
     def choose_next_action(self, state):
