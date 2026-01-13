@@ -19,6 +19,15 @@ class Problem:
     def goal_test(self, state):
         return state == self.goal
 
+    # By default, every move costs 1.
+    def path_cost(self, c, state1, action, state2):
+        return c + 1
+
+    # The heuristic function.
+    # By default, return 0.
+    def h(self, node):
+        return 0
+
 
 # This class is a helper class to help us with running the A* algorithm
 class WateringProblem:
