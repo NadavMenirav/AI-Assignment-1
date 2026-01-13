@@ -132,23 +132,103 @@ class WateringProblem:
 
 
 
-    # # This function returns a list of all the possible next states
-    # def successor(self, state):
-    #
-    #     # This represents our current state
-    #     (robots, plants, taps, total_water_needed) = state
-    #
-    #     # Iterating over all the robots, checking what moves can they do
-    #     for robot_id, (r, c), load in robots:
-    #
+    # This function returns a list of all the possible next states
+    def successor(self, state):
+
+        # A list of the next possible states
+        possible_successors = []
+
+        # This represents our current state
+        (robots, plants, taps, total_water_needed) = state
+
+        # The directions the robot can do. We iterate over them to check which ones are valid
+        # Each direction is a tuple.
+        # 1st element is a string represents the movement
+        # 2nd and 3rd element are the differences in x and y coordinates
+        directions = [("UP", -1, 0), ("DOWN", 1, 0), ("LEFT", 0, -1), ("RIGHT", 0, 1)]
+
+        # Iterating over all the robots, checking what moves can they do
+        # We use enumerate so we know which robot is the one moving
+        for i, robot in enumerate(robots):
+
+            # Extracting the parameters of the robot
+            robot_id, (r, c), load = robot
+
+            # Iterating over all directions to check which ones are valid
+            for action_name, dr, dc in directions:
+
+                # If this direction is valid for this robot we add this action to the possible_successors
+                if self.is_action_legal(state, action_name, robot):
+
+                    # Convert the tuple to a list
+                    new_robots = list(robots)
+
+                    # Make the change
+                    new_pos = (r + dr, c + dc)
+                    new_robots[i] = (robot_id, new_pos, load)
+
+                    # Convert back to tuple
+                    new_state = (tuple(new_robots), plants, taps, total_water_needed)
+
+                    # Adding to the possible successors the new state along with the action name
+                    possible_successors.append((f"{action_name}({robot_id})", new_state))
 
 
+            # Checking if LOAD is valid
+            if self.is_action_legal(state, "LOAD", robot):
+
+                # Convert the tuple to a list
+                new_robots = list(robots)
+                new_taps = list(taps)
+
+                # Make the change
+                new_load = load + 1
+                new_robots[i] = (robot_id, (r, c), new_load)
+
+                for idx, (t_pos, t_water) in enumerate(new_taps):
+                    if t_pos == (r, c):
+                        if t_water - 1 == 0:
+                            del new_taps[idx]  # Remove empty tap
+                        else:
+                            new_taps[idx] = (t_pos, t_water - 1)
+                        break
 
 
+                # Convert back to tuple
+                new_state = (tuple(new_robots), plants, tuple(new_taps), total_water_needed)
+
+                # Adding to the possible successors the new state along with the action name
+                possible_successors.append((f"LOAD({robot_id})", new_state))
 
 
+            # Checking if POUR is valid
+            if self.is_action_legal(state, "POUR", robot):
+
+                # Convert the tuple to a list
+                new_robots = list(robots)
+                new_plants = list(plants)
+
+                # Make the change
+                new_load = load - 1
+                new_robots[i] = (robot_id, (r, c), new_load)
+
+                for idx, (p_pos, p_need) in enumerate(new_plants):
+                    if p_pos == (r, c):
+                        if p_need - 1 == 0:
+                            del new_plants[idx]  # Remove satisfied plant
+                        else:
+                            new_plants[idx] = (p_pos, p_need - 1)
+                        break
 
 
+                # Convert back to tuple
+                new_state = (tuple(new_robots), tuple(new_plants), taps, total_water_needed - 1)
+
+                # Adding to the possible successors the new state along with the action name
+                possible_successors.append((f"POUR({robot_id})", new_state))
+
+
+        return possible_successors
 
 
 class Controller:
