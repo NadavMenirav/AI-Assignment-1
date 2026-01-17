@@ -1,6 +1,7 @@
 import ext_plant
 import numpy as np
 import bisect
+from collections import deque
 
 id = ["000000000"]
 
@@ -128,10 +129,77 @@ class WateringProblem(Problem):
         self.rows = original_game.rows
         self.cols = original_game.cols
 
+        # The BFS distances
+        self.distances = {}
+
+        # A matrix of the legal moves from every square.
+        # Every entry represents the legal moves that can be made from the corresponding square.
+        # It is a four booleans tuple:
+        # 1st entry for moving up
+        # 2nd entry for moving down
+        # 3rd entry for moving left
+        # 4th entry for moving right
+        self.legal_moves = [
+            [[False, False, False, False] for _ in range(self.cols)]
+            for _ in range(self.rows)
+        ]
+
+        # Filling the matrix
+        for x in range(self.rows):
+            for y in range(self.cols):
+                # Check UP
+                if x - 1 >= 0 and (x - 1, y) not in self.walls:
+                    self.legal_moves[x][y][0] = True
+                # Check DOWN
+                if x + 1 < self.rows and (x + 1, y) not in self.walls:
+                    self.legal_moves[x][y][1] = True
+                # Check LEFT
+                if y - 1 >= 0 and (x, y - 1) not in self.walls:
+                    self.legal_moves[x][y][2] = True
+                # Check RIGHT
+                if y + 1 < self.cols and (x, y + 1) not in self.walls:
+                    self.legal_moves[x][y][3] = True
+
     # This function is used in the A* to check if we had reached our goal.
     # The state we get have holds a total_water_need parameter which is 0 when we reach the goal
     def goal_test(self, state):
         return state[3] == 0 # The fourth parameter is the total_water_need
+
+    def BFS(self, coordinate):
+        x = coordinate[0]
+        y = coordinate[1]
+
+        q = deque()
+        q.append((coordinate, -1))
+        closed = set()
+
+        self.distances[(coordinate, coordinate)] = 0
+
+        while len(q) > 0:
+            current = q.popleft()
+            current_coordinate = current[0]
+            x = current_coordinate[0]
+            y = current_coordinate[1]
+            parent_distance = current[1]
+
+            if current_coordinate in closed:
+                continue
+
+            # Cache the distance both ways
+            self.distances[(coordinate, current_coordinate)] = parent_distance + 1
+            self.distances[(current_coordinate, coordinate)] = parent_distance + 1
+
+            closed.add(current_coordinate)
+
+            # Using the legal moves matrix
+            if self.legal_moves[x][y][0] and (x - 1, y) not in closed:
+                q.append(((x - 1, y), parent_distance + 1))
+            if self.legal_moves[x][y][1] and (x + 1, y) not in closed:
+                q.append(((x + 1, y), parent_distance + 1))
+            if self.legal_moves[x][y][2] and (x, y - 1) not in closed:
+                q.append(((x, y - 1), parent_distance + 1))
+            if self.legal_moves[x][y][3] and (x, y + 1) not in closed:
+                q.append(((x, y + 1), parent_distance + 1))
 
 
     # This function receives a point on the grid and returns a boolean value based on whether there is a robot in that
@@ -351,8 +419,32 @@ class WateringProblem(Problem):
 
     # The heuristic function. For now, it is very simple, returns the total water needed.
     def h(self, node):
-        return node.state[3]
 
+        # 1. Unpack the state tuple
+        robots_t, plants_t, taps_t, total_needed = node.state
+
+        # If we have delivered all water, the cost is 0. We are done.
+        if total_needed == 0:
+            return 0
+
+        # 2. Get Targets
+        # Since your successor function deletes finished plants/taps,
+        # anything left in these tuples is "active". We just need their positions.
+        active_plants = [pos for pos, need in plants_t]
+        active_taps = [pos for pos, amount in taps_t]
+
+        # Safety check: If no plants left, cost is 0
+        if not active_plants:
+            return 0
+
+        # Calculate how much water the robots are holding right now
+        total_load = 0
+        for r_id, r_pos, load in robots_t:
+            total_load += load
+
+        # The Water Needed = (Total Needed) - (What we already have in our hands)
+        # We can't have a negative need of course, so we take max(0, ...)
+        water_needed = max(0, total_needed - total_load)
 
 class Controller:
     """This class is a controller for the ext_plant game."""
