@@ -114,17 +114,23 @@ class Problem:
 
 # This class is a helper class to help us with running the A* algorithm
 class WateringProblem(Problem):
-    def __init__(self, state, original_game):
+    def __init__(self, state, original_game, extra_walls=None):
 
-        # Initializing the parrent
+        # Initializing the parent
         super().__init__(state)
 
         # Saving the starting state for the A*
-        # State is (robots_t, plants_t, taps_t, total_water_need)
         self.initial = state
 
-        # Saving the rules of the game
-        self.walls = original_game.walls
+        # Now, I am adding the support of "temporary walls". They will be the robots we want to avoid in our plan
+        # 1. Make a COPY of the real walls (so we don't break the game)
+        self.walls = original_game.walls.copy()
+
+        # 2. Add the "Temporary Walls" (The dumb robots we want to avoid)
+        if extra_walls:
+            self.walls.update(extra_walls)
+
+
         self.capacities = original_game.get_capacities()
         self.rows = original_game.rows
         self.cols = original_game.cols
@@ -133,12 +139,6 @@ class WateringProblem(Problem):
         self.distances = {}
 
         # A matrix of the legal moves from every square.
-        # Every entry represents the legal moves that can be made from the corresponding square.
-        # It is a four booleans tuple:
-        # 1st entry for moving up
-        # 2nd entry for moving down
-        # 3rd entry for moving left
-        # 4th entry for moving right
         self.legal_moves = [
             [[False, False, False, False] for _ in range(self.cols)]
             for _ in range(self.rows)
@@ -159,6 +159,7 @@ class WateringProblem(Problem):
                 # Check RIGHT
                 if y + 1 < self.cols and (x, y + 1) not in self.walls:
                     self.legal_moves[x][y][3] = True
+
 
     # This function is used in the A* to check if we had reached our goal.
     # The state we get have holds a total_water_need parameter which is 0 when we reach the goal
@@ -515,46 +516,105 @@ class WateringProblem(Problem):
 
 
 class Controller:
-    """This class is a controller for the ext_plant game."""
+    """
+    Controls the robots by selecting a single 'Leader' and planning strictly for them.
+    Handles collisions by treating other robots as temporary walls.
+    """
 
     def __init__(self, game: ext_plant.Game):
-        """Initialize controller for given game model."""
-        self.original_game = game
+        self.game_ref = game
+        self.action_queue = []
+        self.known_blockers = set()  # MEMORY: Places where we recently bumped into robots
 
-        # Where we store the A* path
-        self.current_plan = []
+        # --- 1. THE ELECTION: Pick the Leader ---
+        # We want the robot with High Reliability (buckets of 5%) and High Capacity.
 
+        problem_data = game.get_problem()
+        probs = problem_data["robot_chosen_action_prob"]
+        caps = game.get_capacities()
+
+        best_candidate = None
+        highest_score = (-1, -1, -1)
+
+        for rid, p in probs.items():
+            # Score Calculation:
+            # 1. Reliability Tier: 0.96 -> 19. 0.94 -> 18.
+            tier = int(p * 20)
+
+            # 2. Capacity: Bigger tanks are better
+            cap = caps.get(rid, 0)
+
+            # 3. Tie-breaker: The exact probability
+            score = (tier, cap, p)
+
+            if score > highest_score:
+                highest_score = score
+                best_candidate = rid
+
+        self.leader_id = best_candidate
 
     def choose_next_action(self, state):
-        """ Choose the next action given a state."""
+        # Unpack full state
+        robots_full, plants, taps, goal = state
 
-        # If we have a plan from the A* list, we follow it
-        if self.current_plan:
-            move = self.current_plan.pop(0)
-            return move
+        # If we have a plan, check if the NEXT move crashes into a dumb robot.
+        if self.action_queue:
+            next_action = self.action_queue[0]
 
-        # Need to run a new A* search
-        problem = WateringProblem(state, self.original_game)
+            # Where is our leader standing right now?
+            leader_pos = next(r[1] for r in robots_full if r[0] == self.leader_id)
 
-        # Running the search
-        goal_node = astar_search(problem)
+            # Calculate the coordinate we are trying to step onto
+            target_pos = None
+            if "UP" in next_action:
+                target_pos = (leader_pos[0] - 1, leader_pos[1])
+            elif "DOWN" in next_action:
+                target_pos = (leader_pos[0] + 1, leader_pos[1])
+            elif "LEFT" in next_action:
+                target_pos = (leader_pos[0], leader_pos[1] - 1)
+            elif "RIGHT" in next_action:
+                target_pos = (leader_pos[0], leader_pos[1] + 1)
 
-        # If we found a path, reconstruct it
-        if goal_node:
+            # Is someone standing there?
+            if target_pos:
+                # Check if ANY robot (except us) is at target_pos
+                is_blocked = any(r[1] == target_pos for r in robots_full if r[0] != self.leader_id)
+
+                if is_blocked:
+                    # CRASH DETECTED!
+                    # 1. Mark this spot as a "Wall" for future planning
+                    self.known_blockers.add(target_pos)
+                    # 2. Delete the current plan because it's dangerous
+                    self.action_queue = []
+                else:
+                    # The path is clear! Go ahead.
+                    return self.action_queue.pop(0)
+
+        # --- 3. THE SOLVER: Plan a path for the Leader ---
+        # (We only get here if the queue is empty, or we just crashed)
+
+        # Create a "Solo Team" tuple (Just the Leader)
+        active_team = tuple([r for r in robots_full if r[0] == self.leader_id])
+
+        # Create the simplified state
+        solo_mission = (active_team, plants, taps, goal)
+
+        # Solve! (Passing known_blockers as extra_walls)
+        solver = WateringProblem(solo_mission, self.game_ref, extra_walls=self.known_blockers)
+        result_node = astar_search(solver)
+
+        if result_node:
+            # Reconstruct the path
             path = []
-            node = goal_node
+            curr = result_node
+            while curr.parent:
+                path.append(curr.action)
+                curr = curr.parent
 
+            self.action_queue = path[::-1]
 
-            while node.parent:
-                path.append(node.action)
-                node = node.parent
+            # We found a path! Execute the first step.
+            return self.action_queue.pop(0)
 
-            # Reverse the path to get it from the start to the goal
-            self.current_plan = path[::-1]
-
-            # Returning the first move
-            return self.current_plan.pop(0)
-
-        # If the search failed we reset
+        # If we are totally stuck (e.g., surrounded), Reset.
         return "RESET"
-
